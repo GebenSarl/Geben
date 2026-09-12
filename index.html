@@ -201,6 +201,51 @@ tfoot td{font-weight:650;border-top:1px solid var(--filet);border-bottom:0;paddi
 .toast.ouvert{opacity:1;transform:translate(-50%,0)}
 #impression{display:none}
 
+/* ---------- écran d'accès ---------- */
+.acces{position:fixed;inset:0;z-index:80;background:var(--fond);display:none;
+  flex-direction:column;justify-content:center;overflow-y:auto;
+  padding:28px var(--pad) calc(env(safe-area-inset-bottom) + 28px)}
+.acces.ouvert{display:flex}
+.acces-in{width:100%;max-width:430px;margin:0 auto}
+.acces svg.logo{width:50px;height:50px;display:block;margin:0 auto 16px}
+.acces h2{margin:0 0 5px;font-size:1.25rem;font-weight:650;letter-spacing:-.02em;text-align:center}
+.acces .sous{margin:0 0 22px;font-size:.8125rem;color:var(--muet);text-align:center;line-height:1.5}
+.comptes{display:grid;gap:8px;margin-bottom:16px}
+.compte-b{display:flex;align-items:center;gap:11px;width:100%;text-align:left;
+  padding:11px 12px;border:1px solid var(--filet);border-radius:11px}
+.compte-b[aria-pressed="true"]{border-color:var(--accent)}
+.compte-b .av{flex:0 0 auto;width:34px;height:34px;border-radius:50%;background:var(--surface);
+  display:grid;place-items:center;font-weight:700;font-size:.9375rem;color:var(--accent)}
+.compte-b .cn{flex:1;min-width:0}
+.compte-b .cn b{display:block;font-size:.9375rem;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.compte-b .cn span{font-size:.6875rem;color:var(--muet)}
+.code-secours{font-family:ui-monospace,"Courier New",monospace;font-size:1.0625rem;
+  letter-spacing:.06em;text-align:center;background:var(--surface);
+  border:1px solid var(--accent);border-radius:11px;padding:15px 8px;margin:12px 0;
+  word-break:break-word;font-weight:600}
+.lien{background:none;color:var(--muet);font-size:.8125rem;text-decoration:underline;
+  padding:11px;display:block;width:100%;text-align:center}
+.grave{border:1px solid var(--rouge);border-radius:11px;padding:12px 13px;margin:14px 0;
+  font-size:.8125rem;line-height:1.5}
+.grave b{color:var(--rouge)}
+
+/* ---------- écran administrateur ---------- */
+.retour{display:flex;align-items:center;gap:8px;padding:12px var(--pad);
+  color:var(--muet);font-size:.875rem;border-bottom:1px solid var(--filet);width:100%}
+.retour svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+.etiq{display:inline-block;padding:2px 7px;border-radius:20px;font-size:.625rem;
+  font-weight:650;border:1px solid currentColor;vertical-align:1px}
+.etiq-admin{color:var(--accent)}
+.etiq-off{color:var(--muet)}
+.etiq-attente{color:var(--accent)}
+.jrn{display:flex;gap:10px;padding:9px var(--pad);border-bottom:1px solid var(--filet);
+  font-size:.75rem;align-items:baseline}
+.jrn time{flex:0 0 auto;color:var(--muet);font-variant-numeric:tabular-nums}
+.jrn span{flex:1;min-width:0}
+.jrn b{font-weight:600}
+
 /* barre d'action collante : le total et la validation restent accessibles
    sans remonter les 53 lignes de la grille */
 .barre{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--surface);
@@ -289,6 +334,7 @@ input[type="color"]{height:44px;padding:4px;cursor:pointer}
       <div class="titre"><b>Ventes du jour</b><span id="resVentes"></span></div>
       <div class="champs"><label><span class="lib">Date de la saisie</span>
         <input type="date" id="dateVentes"></label></div>
+      <div id="avisVentes"></div>
       <div class="champs"><div class="recherche">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>
         <input type="search" id="fltVentes" placeholder="Chercher une boisson" autocomplete="off">
@@ -316,6 +362,7 @@ input[type="color"]{height:44px;padding:4px;cursor:pointer}
         <label><span class="lib">Date du comptage</span><input type="date" id="invDate"></label>
         <label><span class="lib">Période analysée</span><input type="text" id="invPeriode" readonly></label>
       </div>
+      <div id="avisInv"></div>
       <div class="champs"><div class="recherche">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>
         <input type="search" id="fltInv" placeholder="Chercher une boisson" autocomplete="off">
@@ -339,6 +386,13 @@ input[type="color"]{height:44px;padding:4px;cursor:pointer}
     </section>
 
     <section class="vue" id="vue-rapports"><div id="corpsRapports"></div></section>
+
+    <section class="vue" id="vue-admin">
+      <button class="retour" id="btnRetourAdmin">
+        <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg> Retour à l'application
+      </button>
+      <div id="corpsAdmin"></div>
+    </section>
   </main>
 
   <nav>
@@ -355,6 +409,7 @@ input[type="color"]{height:44px;padding:4px;cursor:pointer}
   </nav>
 </div>
 
+<div class="acces ouvert" id="ecranAcces"><div class="acces-in" id="accesCorps"></div></div>
 <div class="voile" id="voile"></div>
 <div class="feuille" id="feuille" role="dialog" aria-modal="true">
   <div class="poignee"></div><div id="feuilleContenu"></div>
@@ -375,26 +430,148 @@ input[type="color"]{height:44px;padding:4px;cursor:pointer}
 const CLE = "geben_stock_v2";
 const CLE_V1 = "geben_stock_v1";
 
+/* =====================================================================
+   BASE DE DONNÉES LOCALE
+   Les données vivent dans IndexedDB, la base du navigateur : pas de limite
+   de quelques mégaoctets, écritures transactionnelles, et un historique
+   d'instantanés qui permet de revenir en arrière. Le stockage simple du
+   navigateur est conservé en miroir : deux copies valent mieux qu'une.
+   ===================================================================== */
+const BASE = "geben";
+const VERSION_BASE = 1;
+const DOCS = "documents";
+const INSTANTANES = "instantanes";
+const MAX_INSTANTANES = 20;
+
 const Depot = {
+  bd: null,
+  moteur: "stockage du navigateur",
+
+  async ouvrir(){
+    if (this.bd) return this.bd;
+    if (!window.indexedDB) return null;
+    this.bd = await new Promise(ok => {
+      let r;
+      try{ r = window.indexedDB.open(BASE, VERSION_BASE); }
+      catch(e){ ok(null); return; }
+      r.onupgradeneeded = e => {
+        const bd = e.target.result;
+        if (!bd.objectStoreNames.contains(DOCS)) bd.createObjectStore(DOCS);
+        if (!bd.objectStoreNames.contains(INSTANTANES))
+          bd.createObjectStore(INSTANTANES, { keyPath:"id", autoIncrement:true });
+      };
+      r.onsuccess = e => ok(e.target.result);
+      r.onerror = () => ok(null);
+      r.onblocked = () => ok(null);
+    });
+    if (this.bd) this.moteur = "IndexedDB";
+    return this.bd;
+  },
+
+  async op(magasin, mode, action){
+    const bd = await this.ouvrir();
+    if (!bd) return null;
+    return new Promise(ok => {
+      let req, t;
+      try{
+        t = bd.transaction(magasin, mode);
+        req = action(t.objectStore(magasin));
+      }catch(e){ ok(null); return; }
+      t.oncomplete = () => ok(req && "result" in req ? req.result : true);
+      t.onerror = () => ok(null);
+      t.onabort = () => ok(null);
+    });
+  },
+
   async lire(cle){
+    const v = await this.op(DOCS, "readonly", m => m.get(cle));
+    if (typeof v === "string"){
+      try{ return JSON.parse(v); }catch(e){}
+    }
+    /* reprise depuis le stockage simple, utilisé par les versions précédentes */
     try{
-      if (window.storage && window.storage.get){
-        const r = await window.storage.get(cle);
-        if (r && r.value) return JSON.parse(r.value);
+      const brut = localStorage.getItem(cle);
+      if (brut){
+        const d = JSON.parse(brut);
+        await this.op(DOCS, "readwrite", m => m.put(brut, cle));
+        return d;
       }
     }catch(e){}
-    try{ const b = localStorage.getItem(cle); return b ? JSON.parse(b) : null; }
-    catch(e){ return null; }
+    return null;
   },
+
   async ecrire(cle, d){
     const brut = JSON.stringify(d);
-    try{ if (window.storage && window.storage.set){ await window.storage.set(cle, brut); return true; } }catch(e){}
-    try{ localStorage.setItem(cle, brut); return true; }catch(e){ return false; }
+    const dansBase = await this.op(DOCS, "readwrite", m => m.put(brut, cle));
+    let enMiroir = false;
+    try{ localStorage.setItem(cle, brut); enMiroir = true; }catch(e){}
+    return dansBase !== null || enMiroir;
+  },
+
+  /* ---------- instantanés ---------- */
+  async instantanes(){
+    const v = await this.op(INSTANTANES, "readonly", m => m.getAll());
+    return (v || []).sort((a,b) => String(b.le).localeCompare(String(a.le)));
+  },
+  async ajouterInstantane(d, motif){
+    const brut = JSON.stringify(d);
+    const fait = await this.op(INSTANTANES, "readwrite", m => m.add({
+      le: new Date().toISOString(), motif: motif || "automatique",
+      taille: brut.length, contenu: brut
+    }));
+    if (fait !== null) await this.elaguer();
+    return fait !== null;
+  },
+  async elaguer(){
+    const liste = await this.instantanes();
+    if (liste.length <= MAX_INSTANTANES) return;
+    /* on garde les plus récents, et toujours le plus ancien comme point de repère */
+    const aSupprimer = liste.slice(MAX_INSTANTANES, liste.length - 1);
+    for (const i of aSupprimer)
+      await this.op(INSTANTANES, "readwrite", m => m.delete(i.id));
+  },
+  async lireInstantane(idInstantane){
+    const v = await this.op(INSTANTANES, "readonly", m => m.get(idInstantane));
+    if (!v || !v.contenu) return null;
+    try{ return JSON.parse(v.contenu); }catch(e){ return null; }
+  },
+  async supprimerInstantane(idInstantane){
+    return await this.op(INSTANTANES, "readwrite", m => m.delete(idInstantane));
   }
 };
 
+/* Android peut supprimer le stockage d'un site quand la mémoire manque.
+   Cette demande le marque comme durable ; elle est accordée sans question
+   pour une application installée sur l'écran d'accueil. */
+let stockageDurable = null;
+async function demanderDurabilite(){
+  try{
+    if (!navigator.storage || !navigator.storage.persist) return null;
+    if (navigator.storage.persisted && await navigator.storage.persisted()){
+      stockageDurable = true;
+      return true;
+    }
+    stockageDurable = await navigator.storage.persist();
+    return stockageDurable;
+  }catch(e){ stockageDurable = null; return null; }
+}
+async function placeOccupee(){
+  try{
+    if (!navigator.storage || !navigator.storage.estimate) return null;
+    const e = await navigator.storage.estimate();
+    return { utilise: e.usage || 0, total: e.quota || 0 };
+  }catch(e){ return null; }
+}
+function poids(n){
+  if (n == null) return "—";
+  if (n < 1024) return n + " o";
+  if (n < 1024*1024) return (n/1024).toFixed(1).replace(".", ",") + " Ko";
+  return (n/(1024*1024)).toFixed(1).replace(".", ",") + " Mo";
+}
+
 let D = { etablissement:"BAR RESTO GEBEN", theme:null, dateDepart:null, boissons:[],
-           receptions:[], journees:[], inventaires:[], comptage:null, compteur:1 };
+           receptions:[], saisies:[], inventaires:[], comptage:null,
+           supprimes:[], meta:{}, compteur:1 };
 
 /* ---------------------------------------------------------------------
    THÈME
@@ -525,10 +702,183 @@ function enregistrer(){
   cacheStocks = null;
   clearTimeout(minuteurSauve);
   minuteurSauve = setTimeout(async ()=>{
-    if (!await Depot.ecrire(CLE, D)) signaler("Enregistrement impossible sur cet appareil");
+    if (!await Depot.ecrire(CLE, D)){
+      signaler("Enregistrement impossible sur cet appareil");
+      return;
+    }
+    await instantaneDuJour();
+    planifierSynchro();
   }, 200);
 }
+
+/* un instantané par jour d'utilisation : de quoi revenir en arrière après une
+   fausse manœuvre, sans que l'historique enfle indéfiniment */
+let dernierInstantaneVu = null;
+async function instantaneDuJour(){
+  try{
+    if (dernierInstantaneVu === null){
+      const liste = await Depot.instantanes();
+      dernierInstantaneVu = liste.length ? String(liste[0].le).slice(0,10) : "";
+    }
+    const jour = aujourdhui();
+    if (dernierInstantaneVu === jour) return;
+    dernierInstantaneVu = jour;
+    await Depot.ajouterInstantane(D, "sauvegarde du jour");
+  }catch(e){}
+}
 function id(){ return "x" + (D.compteur++) + Date.now().toString(36); }
+
+/* =====================================================================
+   CHIFFREMENT
+   Les prix d'achat ne sont pas seulement masqués à l'écran : ils sont
+   chiffrés dans un coffre. Sans le mot de passe administrateur, ils sont
+   illisibles, y compris dans un fichier de sauvegarde ouvert au bloc-notes.
+   C'est ce qui fait la différence entre une restriction réelle et un
+   affichage qu'il suffirait de contourner.
+   ===================================================================== */
+const ITERATIONS = 120000;
+const ALPHABET_CODE = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; /* sans I, O, 0, 1 */
+
+function sc(){
+  return (window.crypto && window.crypto.subtle) ? window.crypto.subtle : null;
+}
+function alea(n){
+  const t = new Uint8Array(n);
+  window.crypto.getRandomValues(t);
+  return t;
+}
+function enB64(octets){
+  const o = new Uint8Array(octets);
+  let s = "";
+  for (let i = 0; i < o.length; i++) s += String.fromCharCode(o[i]);
+  return btoa(s);
+}
+function deB64(txt){
+  const s = atob(txt);
+  const o = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) o[i] = s.charCodeAt(i);
+  return o;
+}
+async function cleDepuis(secret, sel){
+  if (!sc()) throw new Error("chiffrement indisponible");
+  const base = await sc().importKey("raw", new TextEncoder().encode(secret),
+                                    "PBKDF2", false, ["deriveKey","deriveBits"]);
+  return sc().deriveKey({name:"PBKDF2", salt:deB64(sel), iterations:ITERATIONS, hash:"SHA-256"},
+                        base, {name:"AES-GCM", length:256}, false, ["encrypt","decrypt"]);
+}
+async function empreinteDe(secret, sel){
+  if (!sc()) throw new Error("chiffrement indisponible");
+  const base = await sc().importKey("raw", new TextEncoder().encode(secret),
+                                    "PBKDF2", false, ["deriveBits"]);
+  const bits = await sc().deriveBits(
+    {name:"PBKDF2", salt:deB64(sel), iterations:ITERATIONS, hash:"SHA-256"}, base, 256);
+  return enB64(bits);
+}
+async function chiffrer(cle, octets){
+  const iv = alea(12);
+  const res = await sc().encrypt({name:"AES-GCM", iv}, cle, octets);
+  return { iv:enB64(iv), donnees:enB64(res) };
+}
+async function dechiffrer(cle, iv, donnees){
+  return new Uint8Array(await sc().decrypt({name:"AES-GCM", iv:deB64(iv)}, cle, deB64(donnees)));
+}
+function nouveauCodeSecours(){
+  const o = alea(20);
+  let s = "";
+  for (let i = 0; i < 20; i++) s += ALPHABET_CODE[o[i] % 32];
+  return s.match(/.{5}/g).join("-");
+}
+function normaliserCode(c){
+  return String(c || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+/* ---------------- le coffre des prix d'achat ----------------
+   La clé du coffre est tirée au hasard, puis enfermée deux fois :
+   une fois avec le mot de passe administrateur, une fois avec le code de
+   secours. Perdre le mot de passe n'entraîne donc pas la perte des prix. */
+async function creerCoffre(motDePasse, code, contenu){
+  const cleBrute = alea(32);
+  const selMdp = enB64(alea(16)), selSec = enB64(alea(16));
+  const envMdp = await chiffrer(await cleDepuis(motDePasse, selMdp), cleBrute);
+  const envSec = await chiffrer(await cleDepuis(normaliserCode(code), selSec), cleBrute);
+  /* exportable : il faut pouvoir réenfermer cette même clé sous un nouveau
+     mot de passe, sans quoi la récupération et le changement de mot de passe
+     deviendraient impossibles */
+  const cle = await sc().importKey("raw", cleBrute, {name:"AES-GCM"}, true, ["encrypt","decrypt"]);
+  const corps = await chiffrer(cle, new TextEncoder().encode(JSON.stringify(contenu)));
+  return { coffre:{ selMdp, selSec, ivMdp:envMdp.iv, cleMdp:envMdp.donnees,
+                    ivSec:envSec.iv, cleSec:envSec.donnees,
+                    iv:corps.iv, donnees:corps.donnees }, cle };
+}
+async function ouvrirCoffre(secret, avecCode){
+  const c = D.coffre;
+  if (!c) return null;
+  const cle = await cleDepuis(avecCode ? normaliserCode(secret) : secret,
+                              avecCode ? c.selSec : c.selMdp);
+  const brute = await dechiffrer(cle, avecCode ? c.ivSec : c.ivMdp,
+                                      avecCode ? c.cleSec : c.cleMdp);
+  return await sc().importKey("raw", brute, {name:"AES-GCM"}, true, ["encrypt","decrypt"]);
+}
+async function lireCoffre(cle){
+  const o = await dechiffrer(cle, D.coffre.iv, D.coffre.donnees);
+  return JSON.parse(new TextDecoder().decode(o));
+}
+async function ecrireCoffre(){
+  if (!cleCoffre || !achats) return;
+  const c = await chiffrer(cleCoffre, new TextEncoder().encode(JSON.stringify({prixAchat:achats})));
+  D.coffre.iv = c.iv; D.coffre.donnees = c.donnees;
+  D.meta.coffre = maintenant();
+  enregistrer();
+}
+/* réenferme la même clé de coffre avec un nouveau mot de passe */
+async function reenfermerCoffre(motDePasse){
+  if (!cleCoffre) return;
+  const brute = await sc().exportKey("raw", cleCoffre);
+  const selMdp = enB64(alea(16));
+  const env = await chiffrer(await cleDepuis(motDePasse, selMdp), new Uint8Array(brute));
+  D.coffre.selMdp = selMdp; D.coffre.ivMdp = env.iv; D.coffre.cleMdp = env.donnees;
+  D.meta.coffre = maintenant();
+}
+
+/* =====================================================================
+   SESSION, COMPTES, JOURNAL
+   ===================================================================== */
+let session = null;      /* {id, nom, role} en mémoire seulement */
+let cleCoffre = null;    /* clé du coffre, en mémoire seulement */
+let achats = null;       /* {boissonId: prix d'achat} ou null si le coffre est fermé */
+let achatsMigration = null;
+
+const estAdmin = () => !!session && session.role === "admin";
+const voitAchats = () => achats !== null;
+const prixAchatDe = b => (achats && b ? (achats[b.id] || 0) : 0);
+
+async function nouveauCompte(nom, motDePasse, role){
+  const sel = enB64(alea(16));
+  return { id:id(), nom, role, sel, empreinte: await empreinteDe(motDePasse, sel),
+           actif:true, creeLe:new Date().toISOString(),
+           derniereConnexion:null, nbConnexions:0 };
+}
+async function motDePasseValide(compte, motDePasse){
+  try{ return (await empreinteDe(motDePasse, compte.sel)) === compte.empreinte; }
+  catch(e){ return false; }
+}
+function compteDe(cid){ return D.comptes.find(c => c.id === cid); }
+
+function journaliser(action, detail){
+  D.journal.push({ id:"j"+Math.random().toString(36).slice(2,9)+Date.now().toString(36),
+                   le:new Date().toISOString(),
+                   compteId: session ? session.id : null,
+                   nom: session ? session.nom : "—",
+                   action, detail: detail || "" });
+  if (D.journal.length > 400) D.journal.splice(0, D.journal.length - 400);
+  enregistrer();
+}
+function horodatage(iso){
+  if (!iso) return "jamais";
+  const d = new Date(iso);
+  return d.toLocaleDateString("fr-FR", {day:"2-digit", month:"2-digit", year:"2-digit"})
+       + " à " + d.toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"});
+}
 
 /* ---------------- outils ---------------- */
 const aujourdhui = () => new Date().toLocaleDateString("en-CA");
@@ -548,9 +898,54 @@ function lendemain(iso){
   return d.toLocaleDateString("en-CA");
 }
 function ech(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+const maintenant = () => new Date().toISOString();
+const ORIGINE_DES_TEMPS = "1970-01-01T00:00:00.000Z";
+
+/* Identifiant propre à ce téléphone. Il n'est jamais synchronisé : c'est lui
+   qui permet à chaque appareil de posséder ses propres saisies, et donc à
+   plusieurs téléphones de travailler le même jour sans s'écraser. */
+let APPAREIL = null;
+function preparerAppareil(){
+  try{ APPAREIL = localStorage.getItem("geben_appareil") || null; }catch(e){}
+  if (!APPAREIL){
+    APPAREIL = "ap" + Math.random().toString(36).slice(2,8) + Date.now().toString(36);
+    try{ localStorage.setItem("geben_appareil", APPAREIL); }catch(e){}
+  }
+  return APPAREIL;
+}
+
+/* Pierres tombales : sans elles, un enregistrement supprimé sur un téléphone
+   reviendrait à la première fusion avec un autre qui l'a encore. */
+/* Tout enregistrement synchronisé porte la date de sa dernière modification :
+   c'est elle qui tranche quand deux téléphones ont touché la même fiche. */
+function touche(o){ if (o) o.maj = maintenant(); return o; }
+
+function marquerSupprime(type, ident){
+  D.supprimes.push({ type, id: ident, le: maintenant() });
+  if (D.supprimes.length > 800) D.supprimes.splice(0, D.supprimes.length - 800);
+}
+
 function boisson(bid){ return D.boissons.find(b=>b.id===bid); }
 function catalogue(){ return D.boissons.slice().sort((a,b)=>a.nom.localeCompare(b.nom,"fr")); }
-function journeeDe(date){ return D.journees.find(j=>j.date===date); }
+/* Une saisie est un lot de ventes appartenant à un appareil, pour une date.
+   Plusieurs appareils peuvent donc saisir la même journée sans conflit. */
+function saisiesDe(date){ return D.saisies.filter(x => x.date === date); }
+function maSaisie(date){ return D.saisies.find(x => x.date === date && x.appareil === APPAREIL); }
+function lignesDuJour(date){
+  /* toutes les ventes de la journée, tous appareils confondus, regroupées */
+  const par = new Map();
+  saisiesDe(date).forEach(x => x.lignes.forEach(l => {
+    const e = par.get(l.boissonId) || { boissonId:l.boissonId, qte:0, montant:0 };
+    e.qte += l.qte; e.montant += l.qte * l.pu;
+    par.set(l.boissonId, e);
+  }));
+  return [...par.values()];
+}
+function qteAutresAppareils(date, bid){
+  return saisiesDe(date)
+    .filter(x => x.appareil !== APPAREIL)
+    .reduce((s,x) => s + x.lignes.filter(l => l.boissonId === bid).reduce((q,l)=>q+l.qte, 0), 0);
+}
 
 let tToast;
 function signaler(msg){
@@ -562,9 +957,14 @@ function signaler(msg){
 /* ---------------- références et stock ---------------- */
 /* Point de départ d'un calcul pour une boisson : le dernier inventaire
    où elle a été comptée, sinon la mise en service. */
+function inventairesValides(){ return D.inventaires.filter(i => i.valide); }
+
 function reference(bid, avantOuEgal){
-  for (let i=D.inventaires.length-1; i>=0; i--){
-    const inv = D.inventaires[i];
+  /* un inventaire non validé par l'administrateur ne recale pas le stock :
+     il consigne le comptage et attend d'être pris en compte */
+  const valides = inventairesValides();
+  for (let i=valides.length-1; i>=0; i--){
+    const inv = valides[i];
     if (avantOuEgal && inv.date > avantOuEgal) continue;
     const l = inv.lignes.find(x=>x.boissonId===bid);
     if (l) return { base:l.reel, date:inv.date, libelle:"inventaire du "+dateCourte(inv.date) };
@@ -584,9 +984,9 @@ function cumulsPeriode(bid, ref, dateMax){
     if (!dansFenetre(r.date, ref, dateMax)) return;
     r.lignes.forEach(l=>{ if (l.boissonId===bid) entrees += l.qte; });
   });
-  D.journees.forEach(j=>{
-    if (!dansFenetre(j.date, ref, dateMax)) return;
-    j.lignes.forEach(l=>{ if (l.boissonId===bid) ventes += l.qte; });
+  D.saisies.forEach(x=>{
+    if (!dansFenetre(x.date, ref, dateMax)) return;
+    x.lignes.forEach(l=>{ if (l.boissonId===bid) ventes += l.qte; });
   });
   return { entrees, ventes };
 }
@@ -599,9 +999,9 @@ function stocks(){
     const rf = refs.get(l.boissonId);
     if (rf && dansFenetre(r.date, rf, null)) st.set(l.boissonId, st.get(l.boissonId) + l.qte);
   }));
-  D.journees.forEach(j=> j.lignes.forEach(l=>{
+  D.saisies.forEach(x=> x.lignes.forEach(l=>{
     const rf = refs.get(l.boissonId);
-    if (rf && dansFenetre(j.date, rf, null)) st.set(l.boissonId, st.get(l.boissonId) - l.qte);
+    if (rf && dansFenetre(x.date, rf, null)) st.set(l.boissonId, st.get(l.boissonId) - l.qte);
   }));
   cacheStocks = st;
   return st;
@@ -609,7 +1009,7 @@ function stocks(){
 const stockDe = b => { const v = stocks().get(b.id); return v==null ? 0 : v; };
 function aDesMouvements(bid){
   return D.receptions.some(r=>r.lignes.some(l=>l.boissonId===bid))
-      || D.journees.some(j=>j.lignes.some(l=>l.boissonId===bid));
+      || D.saisies.some(x=>x.lignes.some(l=>l.boissonId===bid));
 }
 
 /* ---------------- activité ---------------- */
@@ -619,30 +1019,31 @@ function activite(debut, fin){
     if (!par.has(bid)) par.set(bid, {bid, nom, vendues:0, recues:0, ca:0, marge:0});
     return par.get(bid);
   };
-  let ca=0, marge=0, vendues=0, recues=0, achats=0, jours=0;
+  let ca=0, marge=0, vendues=0, recues=0, achatsMarchandise=0, jours=0;
 
-  D.journees.forEach(j=>{
+  const joursServis = new Set();
+  D.saisies.forEach(j=>{
     if (j.date<debut || j.date>fin) return;
-    let vide = true;
     j.lignes.forEach(l=>{
       const b = boisson(l.boissonId);
       const e = ligne(l.boissonId, b ? b.nom : (l.nom||"Boisson supprimée"));
-      const m = l.qte * (l.pu - (l.pa||0));
+      const m = voitAchats() ? l.qte * (l.pu - prixAchatDe(b)) : 0;
       e.vendues += l.qte; e.ca += l.qte*l.pu; e.marge += m;
       ca += l.qte*l.pu; marge += m; vendues += l.qte;
-      if (l.qte) vide = false;
+      if (l.qte) joursServis.add(j.date);
     });
-    if (!vide) jours++;
   });
+  jours = joursServis.size;
   D.receptions.forEach(r=>{
     if (r.date<debut || r.date>fin) return;
     r.lignes.forEach(l=>{
       const b = boisson(l.boissonId);
       const e = ligne(l.boissonId, b ? b.nom : (l.nom||"Boisson supprimée"));
-      e.recues += l.qte; recues += l.qte; achats += l.qte*(l.pa||0);
+      e.recues += l.qte; recues += l.qte;
+      achatsMarchandise += voitAchats() ? l.qte * prixAchatDe(b) : 0;
     });
   });
-  return { debut, fin, ca, marge, vendues, recues, achats, jours,
+  return { debut, fin, ca, marge, vendues, recues, achats:achatsMarchandise, jours,
            lignes:[...par.values()].sort((a,b)=> b.ca-a.ca || b.vendues-a.vendues) };
 }
 function etatStock(){
@@ -651,15 +1052,168 @@ function etatStock(){
   const alertes=[];
   bs.forEach(b=>{
     const s = stockDe(b);
-    unites += s; va += s*b.prixAchat; vv += s*b.prixVente;
+    unites += s; va += s*prixAchatDe(b); vv += s*b.prixVente;
     if (s <= 0 && aDesMouvements(b.id)) alertes.push(b);
     else if (b.seuil>0 && s<=b.seuil) alertes.push(b);
   });
   return { lignes:bs, unites, valeurAchat:va, valeurVente:vv, alertes };
 }
 function recetteDu(date){
-  const j = journeeDe(date);
-  return j ? j.lignes.reduce((s,l)=> s + l.qte*l.pu, 0) : 0;
+  return lignesDuJour(date).reduce((s,l)=> s + l.montant, 0);
+}
+
+/* =====================================================================
+   FUSION
+   Plusieurs téléphones saisissent en même temps. La fusion ne remplace donc
+   jamais un jeu de données par un autre : elle réunit les enregistrements un
+   par un. Chacun porte un identifiant et la date de sa dernière modification.
+   Les suppressions laissent une pierre tombale, sans quoi un enregistrement
+   effacé sur un appareil reviendrait depuis un autre.
+   ===================================================================== */
+const COLLECTIONS = [
+  { cle:"boissons",    type:"boisson" },
+  { cle:"receptions",  type:"reception" },
+  { cle:"saisies",     type:"saisie" },
+  { cle:"inventaires", type:"inventaire" },
+  { cle:"comptes",     type:"compte" }
+];
+
+function fusionner(distant){
+  /* aRenvoyer : enregistrements pour lesquels notre version est la plus
+     récente. La table distante se contente d'écraser sur la clé primaire, donc
+     un téléphone mal réglé peut y déposer une version périmée. On réexpédie
+     alors la nôtre au lieu de la laisser disparaître. */
+  const bilan = { ajoutes:0, remplaces:0, ignores:0, effaces:0,
+                  coffreRemplace:false, aRenvoyer:[] };
+  if (!distant) return bilan;
+
+  /* 1. les pierres tombales des deux côtés sont réunies d'abord */
+  const tombes = new Map();
+  const poser = t => {
+    if (!t || !t.type || !t.id) return;
+    const k = t.type + "/" + t.id;
+    const vu = tombes.get(k);
+    if (!vu || String(t.le) > String(vu)) tombes.set(k, t.le);
+  };
+  (D.supprimes || []).forEach(poser);
+  (distant.supprimes || []).forEach(poser);
+  D.supprimes = [...tombes.entries()].map(([k, le]) => ({
+    type: k.slice(0, k.indexOf("/")), id: k.slice(k.indexOf("/") + 1), le
+  }));
+
+  /* 2. chaque collection : union par identifiant, la modification la plus
+        récente l'emporte, puis application des pierres tombales */
+  COLLECTIONS.forEach(({ cle, type }) => {
+    const index = new Map();
+    (D[cle] || []).forEach(o => { if (o && o.id) index.set(o.id, o); });
+    (distant[cle] || []).forEach(o => {
+      if (!o || !o.id) return;
+      const local = index.get(o.id);
+      if (!local){ index.set(o.id, o); bilan.ajoutes++; }
+      else if (String(o.maj || "") > String(local.maj || "")){ index.set(o.id, o); bilan.remplaces++; }
+      else {
+        bilan.ignores++;
+        if (String(local.maj || "") > String(o.maj || "")) bilan.aRenvoyer.push(type + "/" + o.id);
+      }
+    });
+    const garde = [];
+    index.forEach(o => {
+      const le = tombes.get(type + "/" + o.id);
+      /* une modification postérieure à la suppression annule celle-ci */
+      if (le && String(le) >= String(o.maj || "")){ bilan.effaces++; return; }
+      garde.push(o);
+    });
+    D[cle] = garde;
+  });
+  D.saisies.sort((a,b)=>a.date.localeCompare(b.date));
+  D.inventaires.sort((a,b)=>a.date.localeCompare(b.date));
+
+  /* 3. journal : simple réunion, dédoublonnée par identifiant */
+  if (Array.isArray(distant.journal) && distant.journal.length){
+    const vus = new Map();
+    (D.journal || []).concat(distant.journal).forEach(e => {
+      if (!e) return;
+      vus.set(e.id || (e.le + "|" + e.action + "|" + e.nom), e);
+    });
+    D.journal = [...vus.values()].sort((a,b)=> String(a.le).localeCompare(String(b.le)));
+    if (D.journal.length > 400) D.journal.splice(0, D.journal.length - 400);
+  }
+
+  /* 4. réglages, coffre et clôture : un seul exemplaire, le plus récent gagne */
+  if (distant.reglages && String(distant.reglages.maj || "") < String(D.meta.reglages || ""))
+    bilan.aRenvoyer.push("reglages/reglages");
+  if (distant.coffre && String(distant.coffre.maj || "") < String(D.meta.coffre || ""))
+    bilan.aRenvoyer.push("coffre/coffre");
+  if (distant.verrou && String(distant.verrou.maj || "") < String(D.meta.verrou || ""))
+    bilan.aRenvoyer.push("verrou/verrou");
+
+  if (distant.reglages && String(distant.reglages.maj || "") > String(D.meta.reglages || "")){
+    if (distant.reglages.etablissement) D.etablissement = distant.reglages.etablissement;
+    if (distant.reglages.theme) D.theme = distant.reglages.theme;
+    if (distant.reglages.dateDepart) D.dateDepart = distant.reglages.dateDepart;
+    if (distant.reglages.derniereSauvegarde) D.derniereSauvegarde = distant.reglages.derniereSauvegarde;
+    D.meta.reglages = distant.reglages.maj;
+  }
+  if (distant.coffre && String(distant.coffre.maj || "") > String(D.meta.coffre || "")){
+    D.coffre = distant.coffre.valeur || distant.coffre;
+    D.meta.coffre = distant.coffre.maj;
+    bilan.coffreRemplace = true;
+  }
+  if (distant.verrou && String(distant.verrou.maj || "") > String(D.meta.verrou || "")){
+    D.verrou = distant.verrou.valeur || null;
+    D.meta.verrou = distant.verrou.maj;
+  }
+
+  cacheStocks = null;
+  return bilan;
+}
+
+/* Le coffre venu d'un autre téléphone peut avoir été refermé avec un autre mot
+   de passe. On vérifie que la clé en mémoire l'ouvre encore ; sinon on ferme
+   l'accès aux prix plutôt que d'afficher des valeurs fausses. */
+async function verifierCoffreApresFusion(){
+  if (!cleCoffre || !D.coffre) return true;
+  try{
+    const contenu = await lireCoffre(cleCoffre);
+    achats = contenu.prixAchat || {};
+    return true;
+  }catch(e){
+    cleCoffre = null; achats = null;
+    signaler("Le mot de passe administrateur a changé ailleurs — reconnectez-vous");
+    return false;
+  }
+}
+
+/* =====================================================================
+   CLÔTURE DES PÉRIODES
+   Une fois qu'un rapport d'inventaire est validé par l'administrateur, tout
+   ce qui précède sa date est figé. L'administrateur garde la main, mais
+   chaque passage en force est inscrit au journal.
+   ===================================================================== */
+function estVerrouille(date){
+  return !!(D.verrou && date && date <= D.verrou.date);
+}
+function avisVerrou(date){
+  if (!estVerrouille(date)) return "";
+  return '<div class="bandeau" style="border-color:var(--rouge);margin-bottom:4px"><span>'
+    + '<b>Période clôturée</b> jusqu\'au ' + dateCourte(D.verrou.date)
+    + ', validée par ' + ech(D.verrou.nom) + ' le ' + horodatage(D.verrou.le) + '. '
+    + (estAdmin()
+        ? 'Vous pouvez encore corriger, mais l\'opération sera consignée.'
+        : 'Cette saisie ne peut plus être modifiée.')
+    + '</span></div>';
+}
+function peutEcrire(date){
+  if (!estVerrouille(date)) return true;
+  if (!estAdmin()){
+    signaler("Période clôturée : modification impossible");
+    return false;
+  }
+  if (!confirm("La période jusqu'au " + dateCourte(D.verrou.date) + " a été clôturée.\n\n"
+    + "Vous pouvez la corriger en tant qu'administrateur, mais l'opération sera inscrite "
+    + "au journal de l'application. Continuer ?")) return false;
+  journaliser("Correction en période clôturée", "saisie du " + dateCourte(date));
+  return true;
 }
 
 /* =====================================================================
@@ -686,7 +1240,7 @@ document.addEventListener("keydown", e=>{ if(e.key==="Escape") fermerFeuille(); 
 let vueActive = "boissons";
 const rendus = {
   boissons: rendreBoissons, entrees: rendreEntrees, ventes: rendreVentes,
-  inventaire: rendreInventaire, rapports: rendreRapports
+  inventaire: rendreInventaire, rapports: rendreRapports, admin: rendreAdmin
 };
 function aller(nom){
   vueActive = nom;
@@ -733,6 +1287,13 @@ function rendreBoissons(){
       + (et.alertes.length ? " · " + et.alertes.length + " à surveiller" : "") : "";
 
   const bandeaux = [];
+  if (estAdmin() && joursDepuisSauvegarde() > 7)
+    bandeaux.push('<div class="bandeau" style="border-color:var(--rouge)"><span>'
+      + (D.derniereSauvegarde
+          ? '<b>Dernière sauvegarde il y a ' + joursDepuisSauvegarde() + ' jours.</b> '
+          : '<b>Aucune sauvegarde envoyée.</b> ')
+      + 'Les données ne vivent que dans ce téléphone.</span>'
+      + '<button id="versSauvegarde">Sauvegarder</button></div>');
   if (invitationInstall && !estInstallee())
     bandeaux.push('<div class="bandeau"><span><b>Installer l\'application</b> sur l\'écran '
       + 'd\'accueil, pour l\'ouvrir sans passer par le navigateur.</span>'
@@ -743,6 +1304,8 @@ function rendreBoissons(){
       + 'Sans prix, la recette ne peut pas être calculée.</span>'
       + '<button id="versPrix">Fixer</button></div>');
   document.getElementById("zoneBandeaux").innerHTML = bandeaux.join("");
+  const bSauv = document.getElementById("versSauvegarde");
+  if (bSauv) bSauv.addEventListener("click", ()=>{ creerSauvegarde(); rendreBoissons(); });
   const bInst = document.getElementById("versInstall");
   if (bInst) bInst.addEventListener("click", lancerInstallation);
   const bPrix = document.getElementById("versPrix");
@@ -773,41 +1336,63 @@ function rendreBoissons(){
         + '<span class="chiffre"><span class="q num">'+nombre(s)+'</span><span class="u">'+u+'</span></span>'
         + '</button>';
     }).join("") + '</div>'
-    + '<div class="titre"><span>Valeur du stock au prix d\'achat</span>'
-    + '<b class="num">'+argent(et.valeurAchat)+'</b></div>';
+    + (voitAchats()
+        ? '<div class="titre"><span>Valeur du stock au prix d\'achat</span>'
+          + '<b class="num">'+argent(et.valeurAchat)+'</b></div>'
+        : '<div class="titre"><span>Valeur du stock au prix de vente</span>'
+          + '<b class="num">'+argent(et.valeurVente)+'</b></div>');
 
     zone.querySelectorAll("[data-modifier]").forEach(el=>
       el.addEventListener("click", ()=>formulaireBoisson(el.dataset.modifier)));
   }
 
   else if (modeBoissons === "prix"){
+    /* un utilisateur non administrateur ne voit ni la colonne Achat ni la marge :
+       la valeur n'est pas seulement masquée, elle n'est pas déchiffrée */
+    const avecAchat = voitAchats();
     zone.innerHTML =
-      '<div class="gr-entete" style="grid-template-columns:1fr 58px 58px">'
-      + '<span>Boisson</span><span>Achat</span><span>Vente</span></div>'
+      '<div class="gr-entete" style="grid-template-columns:1fr '+(avecAchat?'58px 58px':'58px')+'">'
+      + '<span>Boisson</span>'+(avecAchat?'<span>Achat</span>':'')+'<span>Vente</span></div>'
       + bs.map(b=>
-          '<div class="gr trois" data-nom="'+ech(b.nom.toLowerCase())+'">'
+          '<div class="gr'+(avecAchat?' trois':'')+'" data-nom="'+ech(b.nom.toLowerCase())+'">'
           + '<span class="gr-nom"><span>'+ech(b.nom)+'</span>'
           + '<small'+(b.prixVente?'':' class="manque"')+'>'
-          + (b.prixVente ? "marge "+argent(b.prixVente-b.prixAchat) : "prix de vente à définir")
+          + (b.prixVente
+              ? (avecAchat ? "marge "+argent(b.prixVente - prixAchatDe(b)) : "prix de vente")
+              : "prix de vente à définir")
           + '</small></span>'
-          + '<input type="number" inputmode="numeric" min="0" step="5" data-pa="'+b.id+'" '
-          + 'value="'+(b.prixAchat||"")+'" placeholder="0" aria-label="Prix d\'achat '+ech(b.nom)+'">'
+          + (avecAchat
+              ? '<input type="number" inputmode="numeric" min="0" step="5" data-pa="'+b.id+'" '
+                + 'value="'+(prixAchatDe(b)||"")+'" placeholder="0" aria-label="Prix d\'achat '+ech(b.nom)+'">'
+              : '')
           + '<input type="number" inputmode="numeric" min="0" step="5" data-pv="'+b.id+'" '
           + 'value="'+(b.prixVente||"")+'" placeholder="0" aria-label="Prix de vente '+ech(b.nom)+'">'
           + '</div>').join("")
-      + '<div class="zone"><p class="aide">Les prix sont enregistrés au fur et à mesure de la saisie. '
-      + 'Ils servent de prix par défaut pour les ventes et pour la valeur du stock.</p></div>';
+      + '<div class="zone"><p class="aide">'
+      + (avecAchat
+          ? 'Les prix sont enregistrés au fur et à mesure de la saisie. Les prix d\'achat sont '
+            + 'chiffrés et ne sont lisibles que par l\'administrateur.'
+          : 'Les prix d\'achat et les marges sont réservés à l\'administrateur.')
+      + '</p></div>';
 
     zone.querySelectorAll("[data-pa],[data-pv]").forEach(inp=>{
-      inp.addEventListener("change", ()=>{
-        const champ = inp.dataset.pa ? "prixAchat" : "prixVente";
+      inp.addEventListener("change", async ()=>{
         const b = boisson(inp.dataset.pa || inp.dataset.pv);
         if (!b) return;
-        b[champ] = Math.max(0, Math.round(+inp.value||0));
+        const valeur = Math.max(0, Math.round(+inp.value||0));
+        if (inp.dataset.pa){
+          if (!voitAchats()) return;
+          achats[b.id] = valeur;
+          await ecrireCoffre();
+        } else {
+          b.prixVente = valeur;
+          touche(b); enregistrer();
+        }
         const pt = inp.closest(".gr").querySelector("small");
-        if (b.prixVente){ pt.textContent = "marge "+argent(b.prixVente-b.prixAchat); pt.className=""; }
-        else { pt.textContent = "prix de vente à définir"; pt.className="manque"; }
-        enregistrer();
+        if (b.prixVente){
+          pt.textContent = voitAchats() ? "marge "+argent(b.prixVente - prixAchatDe(b)) : "prix de vente";
+          pt.className = "";
+        } else { pt.textContent = "prix de vente à définir"; pt.className = "manque"; }
       });
     });
   }
@@ -837,11 +1422,12 @@ function rendreBoissons(){
       inp.addEventListener("change", ()=>{
         const b = boisson(inp.dataset.si); if (!b) return;
         b.stockInitial = Math.max(0, Math.round(+inp.value||0));
-        enregistrer();
+        touche(b); enregistrer();
       });
     });
     document.getElementById("champDepart").addEventListener("change", e=>{
       D.dateDepart = e.target.value || aujourdhui();
+      D.meta.reglages = maintenant();
       enregistrer(); rendreBoissons();
     });
   }
@@ -866,7 +1452,7 @@ function rendreBoissons(){
         const doublon = D.boissons.find(x=> x.id!==b.id && x.nom.toLowerCase()===nouveau.toLowerCase());
         if (doublon){ inp.value = b.nom; signaler(nouveau + " existe déjà dans le catalogue"); return; }
         const ancien = b.nom;
-        b.nom = nouveau;
+        b.nom = nouveau; touche(b);
         inp.closest(".gr").dataset.nom = nouveau.toLowerCase();
         enregistrer();
         signaler(ancien + " renommée en " + nouveau);
@@ -896,11 +1482,16 @@ function formulaireBoisson(bid){
     +   '<label><span class="lib">Marque (facultatif)</span><input id="fMarque" value="'+ech(v("marque"))+'" autocomplete="off"></label>'
     +   '<label><span class="lib">Format (facultatif)</span><input id="fFormat" value="'+ech(v("format"))+'" autocomplete="off"></label>'
     + '</div>'
-    + '<div class="deux">'
-    +   '<label><span class="lib">Prix d\'achat</span><input id="fPa" type="number" inputmode="numeric" min="0" step="5" value="'+v("prixAchat","")+'" placeholder="0"></label>'
-    +   '<label><span class="lib">Prix de vente</span><input id="fPv" type="number" inputmode="numeric" min="0" step="5" value="'+v("prixVente","")+'" placeholder="0"></label>'
-    + '</div>'
-    + '<p class="aide" id="fMarge"></p>'
+    + (voitAchats()
+        ? '<div class="deux">'
+          + '<label><span class="lib">Prix d\'achat</span><input id="fPa" type="number" '
+          + 'inputmode="numeric" min="0" step="5" value="'+(b?(prixAchatDe(b)||""):"")+'" placeholder="0"></label>'
+          + '<label><span class="lib">Prix de vente</span><input id="fPv" type="number" '
+          + 'inputmode="numeric" min="0" step="5" value="'+v("prixVente","")+'" placeholder="0"></label>'
+          + '</div><p class="aide" id="fMarge"></p>'
+        : '<label><span class="lib">Prix de vente</span><input id="fPv" type="number" '
+          + 'inputmode="numeric" min="0" step="5" value="'+v("prixVente","")+'" placeholder="0"></label>'
+          + '<p class="aide">Le prix d\'achat et la marge sont réservés à l\'administrateur.</p>')
     + '<div class="deux">'
     +   '<label><span class="lib">'+(b && r && !r.depart ? "Stock actuel (calculé)" : "Stock de départ")+'</span>'
     +   (b && r && !r.depart
@@ -919,21 +1510,22 @@ function formulaireBoisson(bid){
     const nom=document.getElementById("fNom"), pa=document.getElementById("fPa"),
           pv=document.getElementById("fPv"), mg=document.getElementById("fMarge");
     function majMarge(){
+      if (!pa || !mg) return;
       const m = (+pv.value||0) - (+pa.value||0);
       mg.innerHTML = (!pv.value && !pa.value) ? "" :
         "Marge par unité : <b>"+argent(m)+"</b>" + (m<0 ? " — vous vendez à perte" : "");
     }
-    pa.addEventListener("input", majMarge); pv.addEventListener("input", majMarge); majMarge();
+    if (pa) pa.addEventListener("input", majMarge);
+    pv.addEventListener("input", majMarge); majMarge();
     if (!b) setTimeout(()=>nom.focus(), 280);
     document.getElementById("fNon").addEventListener("click", fermerFeuille);
 
-    document.getElementById("fOk").addEventListener("click", ()=>{
+    document.getElementById("fOk").addEventListener("click", async ()=>{
       const champSi = document.getElementById("fSi");
       const d = {
         nom: nom.value.trim(),
         marque: document.getElementById("fMarque").value.trim(),
         format: document.getElementById("fFormat").value.trim(),
-        prixAchat: Math.max(0, Math.round(+pa.value||0)),
         prixVente: Math.max(0, Math.round(+pv.value||0)),
         seuil: Math.max(0, Math.round(+document.getElementById("fSeuil").value||0))
       };
@@ -942,16 +1534,26 @@ function formulaireBoisson(bid){
       const doublon = D.boissons.find(x=> x.nom.toLowerCase()===d.nom.toLowerCase() && (!b || x.id!==b.id));
       if (doublon){ signaler(d.nom + " existe déjà dans le catalogue"); return; }
 
-      if (b){ Object.assign(b, d); signaler(b.nom + " modifiée"); }
-      else { D.boissons.push(Object.assign({id:id(), stockInitial:d.stockInitial||0}, d)); signaler(d.nom + " ajoutée"); }
+      let cible = b;
+      if (b){ Object.assign(b, d); touche(b); signaler(b.nom + " modifiée"); }
+      else {
+        cible = touche(Object.assign({id:id(), stockInitial:d.stockInitial||0}, d));
+        D.boissons.push(cible);
+        signaler(d.nom + " ajoutée");
+      }
+      if (voitAchats() && pa){
+        achats[cible.id] = Math.max(0, Math.round(+pa.value||0));
+        await ecrireCoffre();
+      }
       enregistrer(); fermerFeuille(); rafraichir();
     });
 
     if (b) document.getElementById("fDel").addEventListener("click", ()=>{
       const n = D.receptions.reduce((s,r)=>s+r.lignes.filter(l=>l.boissonId===b.id).length,0)
-              + D.journees.reduce((s,j)=>s+j.lignes.filter(l=>l.boissonId===b.id).length,0);
+              + D.saisies.reduce((s,x)=>s+x.lignes.filter(l=>l.boissonId===b.id).length,0);
       if (!confirm(n ? b.nom+" a "+n+" mouvement(s) enregistré(s), qui resteront dans les rapports. Supprimer du catalogue ?"
                      : "Supprimer "+b.nom+" du catalogue ?")) return;
+      marquerSupprime("boisson", b.id);
       D.boissons = D.boissons.filter(x=>x.id!==b.id);
       enregistrer(); fermerFeuille(); rafraichir(); signaler(b.nom+" supprimée");
     });
@@ -977,7 +1579,8 @@ function rendreEntrees(){
   }
   zone.innerHTML = rs.map(r=>{
     const q = r.lignes.reduce((s,l)=>s+l.qte,0);
-    const val = r.lignes.reduce((s,l)=>s+l.qte*(l.pa||0),0);
+    const val = voitAchats()
+      ? r.lignes.reduce((s,l)=> s + l.qte*prixAchatDe(boisson(l.boissonId)), 0) : 0;
     const meta = [r.lignes.length+" référence"+(r.lignes.length>1?"s":""),
                   r.fournisseur, val?argent(val):""].filter(Boolean).join(" · ");
     return '<div class="ligne">'
@@ -994,8 +1597,10 @@ function rendreEntrees(){
   zone.querySelectorAll("[data-suppr]").forEach(el=>
     el.addEventListener("click", ()=>{
       const r = D.receptions.find(x=>x.id===el.dataset.suppr); if(!r) return;
+      if (!peutEcrire(r.date)) return;
       const q = r.lignes.reduce((s,l)=>s+l.qte,0);
       if (!confirm("Supprimer la réception du "+dateCourte(r.date)+" ? "+q+" unité(s) seront retirées du stock.")) return;
+      marquerSupprime("reception", el.dataset.suppr);
       D.receptions = D.receptions.filter(x=>x.id!==el.dataset.suppr);
       enregistrer(); rafraichir(); signaler("Réception supprimée");
     }));
@@ -1005,6 +1610,9 @@ let saisieRecep = {};
 function ouvrirReception(rid){
   if (!D.boissons.length){ signaler("Ajoutez d'abord des boissons"); aller("boissons"); return; }
   const r = rid ? D.receptions.find(x=>x.id===rid) : null;
+  if (r && estVerrouille(r.date) && !estAdmin()){
+    signaler("Réception clôturée : consultation seule");
+  }
   saisieRecep = {};
   if (r) r.lignes.forEach(l=> saisieRecep[l.boissonId] = l.qte);
   const fournisseurs = [...new Set(D.receptions.map(x=>x.fournisseur).filter(Boolean))];
@@ -1022,7 +1630,8 @@ function ouvrirReception(rid){
     + bs.map(b=>
         '<div class="gr" data-nom="'+ech(b.nom.toLowerCase())+'">'
         + '<span class="gr-nom"><span>'+ech(b.nom)+'</span>'
-        + '<small>en stock '+nombre(stockDe(b))+(b.prixAchat?" · achat "+argent(b.prixAchat):"")+'</small></span>'
+        + '<small>en stock '+nombre(stockDe(b))
+        + (voitAchats() && prixAchatDe(b) ? " · achat "+argent(prixAchatDe(b)) : "")+'</small></span>'
         + '<input type="number" inputmode="numeric" min="0" step="1" data-q="'+b.id+'" '
         + 'value="'+(saisieRecep[b.id]||"")+'" placeholder="0" aria-label="Quantité reçue '+ech(b.nom)+'"></div>').join("")
     + '</div>'
@@ -1036,7 +1645,8 @@ function ouvrirReception(rid){
       let q=0, n=0, val=0;
       Object.keys(saisieRecep).forEach(bid=>{
         const v = saisieRecep[bid]; if (!v) return;
-        const b = boisson(bid); q += v; n++; val += v*((b&&b.prixAchat)||0);
+        const b = boisson(bid); q += v; n++;
+        if (voitAchats()) val += v * prixAchatDe(b);
       });
       resume.innerHTML = n
         ? n+" référence"+(n>1?"s":"")+" · <b>"+nombre(q)+" unités</b>"+(val?" · valeur "+argent(val):"")
@@ -1057,11 +1667,14 @@ function ouvrirReception(rid){
       const four = document.getElementById("rFour").value.trim();
       const lignes = Object.keys(saisieRecep).filter(bid=>saisieRecep[bid]>0).map(bid=>{
         const b = boisson(bid);
-        return { boissonId:bid, nom:b?b.nom:"", qte:saisieRecep[bid], pa:(b&&b.prixAchat)||0 };
+        return { boissonId:bid, nom:b?b.nom:"", qte:saisieRecep[bid] };
       });
       if (!lignes.length){ signaler("Aucune quantité saisie"); return; }
-      if (r){ r.date=date; r.fournisseur=four; r.lignes=lignes; }
-      else D.receptions.push({ id:id(), date, fournisseur:four, lignes });
+      if (!peutEcrire(date)) return;
+      if (r && r.date !== date && !peutEcrire(r.date)) return;
+      if (r){ r.date=date; r.fournisseur=four; r.lignes=lignes; touche(r); }
+      else D.receptions.push(touche({ id:id(), date, fournisseur:four, lignes,
+             nom: session ? session.nom : "—", le: maintenant() }));
       enregistrer(); fermerFeuille(); rafraichir();
       signaler(nombre(lignes.reduce((s,l)=>s+l.qte,0)) + " unités entrées en stock");
     });
@@ -1076,20 +1689,25 @@ let dateVentes = aujourdhui();
 let saisieVentes = {};
 
 function chargerJournee(date){
+  /* on ne charge que la saisie de CE téléphone : celles des autres appareils
+     sont affichées à côté mais ne sont jamais modifiées d'ici */
   saisieVentes = {};
-  const j = journeeDe(date);
-  if (j) j.lignes.forEach(l=> saisieVentes[l.boissonId] = { qte:l.qte, pu:l.pu });
+  const x = maSaisie(date);
+  if (x) x.lignes.forEach(l=> saisieVentes[l.boissonId] = { qte:l.qte, pu:l.pu });
 }
 
 function rendreVentes(){
   const champ = document.getElementById("dateVentes");
   if (champ.value !== dateVentes) champ.value = dateVentes;
   const bs = catalogue();
-  const j = journeeDe(dateVentes);
+  const x = maSaisie(dateVentes);
+  const autres = saisiesDe(dateVentes).filter(y => y.appareil !== APPAREIL);
 
   document.getElementById("resVentes").textContent =
     (dateVentes===aujourdhui() ? "Aujourd'hui" : dateLongue(dateVentes))
-    + (j ? " · déjà enregistrée" : "");
+    + (x ? " · ma saisie enregistrée" : "")
+    + (autres.length ? " · " + autres.length + " autre"+(autres.length>1?"s":"")+" appareil"
+        +(autres.length>1?"s":"") : "");
 
   const grille = document.getElementById("grilleVentes");
   if (!bs.length){
@@ -1099,16 +1717,28 @@ function rendreVentes(){
   grille.innerHTML = bs.map(b=>{
     const e = saisieVentes[b.id];
     const pu = e ? e.pu : b.prixVente;
+    const ailleurs = qteAutresAppareils(dateVentes, b.id);
     return '<div class="gr" data-nom="'+ech(b.nom.toLowerCase())+'" style="grid-template-columns:1fr 58px 62px">'
       + '<span class="gr-nom"><span>'+ech(b.nom)+'</span>'
       + '<small'+(pu?'':' class="manque"')+'>'
       + (pu ? argent(pu)+" l'unité · stock "+nombre(stockDe(b)) : "prix de vente à définir")
+      + (ailleurs ? ' · <b style="color:var(--accent)">+'+nombre(ailleurs)+' ailleurs</b>' : '')
       + '</small></span>'
       + '<input type="number" inputmode="numeric" min="0" step="1" data-v="'+b.id+'" '
       + 'value="'+(e&&e.qte?e.qte:"")+'" placeholder="0" aria-label="Quantité vendue '+ech(b.nom)+'">'
       + '<span class="gr-mt num" data-mt="'+b.id+'">'+(e&&e.qte?argent(e.qte*pu):"—")+'</span>'
       + '</div>';
   }).join("");
+
+  document.getElementById("avisVentes").innerHTML = avisVerrou(dateVentes);
+  const fige = estVerrouille(dateVentes) && !estAdmin();
+  if (fige){
+    grille.querySelectorAll("[data-v]").forEach(inp => inp.setAttribute("disabled",""));
+    document.getElementById("btnValiderVentes").setAttribute("disabled","");
+    document.getElementById("btnEffacerVentes").setAttribute("disabled","");
+  } else {
+    document.getElementById("btnEffacerVentes").removeAttribute("disabled");
+  }
 
   grille.querySelectorAll("[data-v]").forEach(inp=>
     inp.addEventListener("input", ()=>{
@@ -1132,14 +1762,17 @@ function majTotalVentes(){
     const e = saisieVentes[bid]; if (!e || !e.qte) return;
     ca += e.qte*e.pu; q += e.qte; n++;
   });
+  if (estVerrouille(dateVentes) && !estAdmin()){
+    document.getElementById("btnValiderVentes").setAttribute("disabled","");
+  }
+  const totalJour = recetteDu(dateVentes);
+  const partAutres = totalJour - ca;
   document.getElementById("totalVentes").textContent = argent(ca);
   document.getElementById("totalVentesTxt").textContent =
-    n ? nombre(q)+" unités sur "+n+" référence"+(n>1?"s":"") : "Aucune vente saisie";
+    (n ? nombre(q)+" unités sur "+n+" référence"+(n>1?"s":"") : "Aucune vente sur ce téléphone")
+    + (partAutres > 0 ? " · journée entière " + argent(totalJour) : "");
   const btn = document.getElementById("btnValiderVentes");
-  btn.textContent = journeeDe(dateVentes) ? "Mettre à jour" : "Enregistrer";
-  document.getElementById("caLbl").textContent =
-    vueActive==="ventes" && dateVentes!==aujourdhui()
-      ? "Recette du jour" : "Recette du jour";
+  btn.textContent = maSaisie(dateVentes) ? "Mettre à jour" : "Enregistrer";
 }
 
 document.getElementById("dateVentes").addEventListener("change", e=>{
@@ -1149,26 +1782,33 @@ document.getElementById("dateVentes").addEventListener("change", e=>{
 });
 
 document.getElementById("btnValiderVentes").addEventListener("click", ()=>{
+  if (!peutEcrire(dateVentes)) return;
   const lignes = Object.keys(saisieVentes).filter(bid=>saisieVentes[bid].qte>0).map(bid=>{
     const b = boisson(bid);
-    return { boissonId:bid, nom:b?b.nom:"", qte:saisieVentes[bid].qte,
-             pu:saisieVentes[bid].pu, pa:(b&&b.prixAchat)||0 };
+    return { boissonId:bid, nom:b?b.nom:"", qte:saisieVentes[bid].qte, pu:saisieVentes[bid].pu };
   });
   const sansPrix = lignes.filter(l=>!l.pu);
   if (sansPrix.length && !confirm(
       sansPrix.length+" boisson(s) vendue(s) sans prix de vente ne compteront pas dans la recette. Continuer ?")) return;
 
-  const existante = journeeDe(dateVentes);
+  const existante = maSaisie(dateVentes);
   if (!lignes.length){
     if (!existante){ signaler("Aucune vente saisie"); return; }
-    if (!confirm("Supprimer toutes les ventes du "+dateCourte(dateVentes)+" ?")) return;
-    D.journees = D.journees.filter(x=>x.date!==dateVentes);
-    enregistrer(); rafraichir(); signaler("Ventes du jour supprimées"); return;
+    if (!confirm("Supprimer ma saisie du "+dateCourte(dateVentes)+" ?\n\n"
+      + "Les saisies faites depuis les autres téléphones ne sont pas touchées.")) return;
+    marquerSupprime("saisie", existante.id);
+    D.saisies = D.saisies.filter(y => y.id !== existante.id);
+    enregistrer(); rafraichir(); signaler("Ma saisie du jour supprimée"); return;
   }
-  if (existante) existante.lignes = lignes;
-  else {
-    D.journees.push({ date:dateVentes, lignes });
-    D.journees.sort((a,b)=>a.date.localeCompare(b.date));
+  if (existante){
+    existante.lignes = lignes;
+    existante.maj = maintenant();
+  } else {
+    D.saisies.push({ id:id(), date:dateVentes, appareil:APPAREIL,
+                     compteId: session ? session.id : null,
+                     nom: session ? session.nom : "—",
+                     lignes, le:maintenant(), maj:maintenant() });
+    D.saisies.sort((a,b)=>a.date.localeCompare(b.date));
   }
   enregistrer(); rafraichir();
   signaler(argent(lignes.reduce((s,l)=>s+l.qte*l.pu,0)) + " enregistrés pour le " + dateCourte(dateVentes));
@@ -1187,7 +1827,7 @@ let invRefCle = null, invDate = null, invSaisie = {};
 
 function pointsReference(){
   const pts = [{ cle:"depart", date:D.dateDepart, libelle:"Mise en service du "+dateCourte(D.dateDepart) }];
-  D.inventaires.forEach(inv=> pts.push({
+  inventairesValides().forEach(inv=> pts.push({
     cle:inv.id, date:inv.date,
     libelle:"Inventaire du "+dateCourte(inv.date)+" ("+inv.lignes.length+" boissons)"
   }));
@@ -1227,8 +1867,12 @@ function rendreInventaire(){
   document.getElementById("invPeriode").value =
     (pt.cle==="depart" ? "jusqu'au "+dateCourte(invDate)
                        : "du "+dateCourte(lendemain(pt.date))+" au "+dateCourte(invDate));
+  const attente = D.inventaires.filter(i=>!i.valide).length;
   document.getElementById("resInv").textContent =
-    D.inventaires.length ? D.inventaires.length+" inventaire"+(D.inventaires.length>1?"s":"")+" validé"+(D.inventaires.length>1?"s":"") : "";
+    attente ? attente+" en attente de validation"
+            : (inventairesValides().length
+                ? inventairesValides().length+" validé"+(inventairesValides().length>1?"s":"") : "");
+  document.getElementById("avisInv").innerHTML = avisVerrou(invDate);
 
   const grille = document.getElementById("grilleInv");
   if (!bs.length){
@@ -1285,7 +1929,7 @@ function majEcarts(){
     const e = invSaisie[bid] - th;
     const b = boisson(bid);
     if (e<0){ manquants += -e; valManquants += -e * ((b&&b.prixVente)||0); }
-    else if (e>0){ surplus += e; valSurplus += e * ((b&&b.prixAchat)||0); }
+    else if (e>0){ surplus += e; valSurplus += voitAchats() ? e * prixAchatDe(b) : 0; }
     else exacts++;
     cel.textContent = e===0 ? "exact" : (e>0?"+":"") + nombre(e);
     cel.className = "cpt-ec " + (e>0?"ec-plus":e<0?"ec-moins":"ec-nul");
@@ -1346,36 +1990,97 @@ document.getElementById("btnValiderInv").addEventListener("click", ()=>{
     lignes.push({ boissonId:b.id, nom:b.nom, base:t.ref.base, baseDate:t.ref.date,
                   entrees:t.entrees, ventes:t.ventes, theorique:t.theorique,
                   reel:invSaisie[b.id], ecart:invSaisie[b.id]-t.theorique,
-                  pa:b.prixAchat, pv:b.prixVente });
+                  pv:b.prixVente });
   });
   if (!lignes.length){ signaler("Aucun comptage saisi"); return; }
   const nbEcarts = lignes.filter(l=>l.ecart!==0).length;
   const manquants = lignes.reduce((s,l)=> s + (l.ecart<0 ? -l.ecart : 0), 0);
 
-  if (!confirm("Valider l'inventaire du "+dateCourte(invDate)+" ?\n\n"
+  if (!peutEcrire(invDate)) return;
+  if (!confirm("Enregistrer le comptage du "+dateCourte(invDate)+" ?\n\n"
     + lignes.length+" boisson(s) comptée(s)\n"+nbEcarts+" écart(s), "+manquants+" unité(s) manquante(s)\n\n"
-    + "Le stock compté devient le nouveau point de départ des calculs.")) return;
+    + (estAdmin()
+        ? "Le stock ne sera recalé qu'après validation du rapport."
+        : "Le rapport sera transmis à l'administrateur. Le stock ne bouge pas avant sa validation."))) return;
 
-  D.inventaires.push({ id:id(), date:invDate, refDate:pt.date,
-                       refLibelle:pt.libelle, lignes });
+  const inv = touche({ id:id(), date:invDate, refDate:pt.date, refLibelle:pt.libelle,
+                lignes, valide:null, saisiPar: session ? session.nom : "—",
+                saisiLe: new Date().toISOString() });
+  D.inventaires.push(inv);
   D.inventaires.sort((a,b)=>a.date.localeCompare(b.date));
   D.comptage = null; invSaisie = {}; invRefCle = null;
-  enregistrer(); rafraichir(); signaler("Inventaire validé · stock recalé");
+  journaliser("Comptage enregistré",
+    dateCourte(invDate)+" · "+lignes.length+" boissons, "+nbEcarts+" écart(s)");
+  enregistrer(); rafraichir();
+
+  if (estAdmin()
+      && confirm("Valider le rapport maintenant et clôturer la période jusqu'au "
+                 + dateCourte(invDate) + " ?\n\nLe stock compté deviendra le point de départ "
+                 + "des calculs, et les saisies antérieures seront figées.")){
+    validerRapport(inv.id, true);
+  } else {
+    signaler("Comptage enregistré · en attente de validation");
+  }
 });
+
+function validerRapport(iid, silencieux){
+  const inv = D.inventaires.find(x=>x.id===iid);
+  if (!inv || !estAdmin()) return;
+  inv.valide = { parCompteId: session ? session.id : null,
+                 nom: session ? session.nom : "—", le: new Date().toISOString() };
+  touche(inv);
+  /* la clôture ne recule jamais : elle retient la date la plus avancée */
+  if (!D.verrou || inv.date >= D.verrou.date){
+    D.verrou = { date: inv.date, inventaireId: inv.id,
+                 parCompteId: inv.valide.parCompteId, nom: inv.valide.nom, le: inv.valide.le };
+    D.meta.verrou = maintenant();
+  }
+  journaliser("Rapport validé",
+    "inventaire du "+dateCourte(inv.date)+" · période clôturée jusqu'à cette date");
+  /* le rapport validé devient la nouvelle référence proposée au prochain comptage */
+  invRefCle = null; invSaisie = {};
+  enregistrer(); rafraichir();
+  if (!silencieux) fermerFeuille();
+  signaler("Rapport validé · période clôturée");
+}
+
+function leverCloture(iid){
+  const inv = D.inventaires.find(x=>x.id===iid);
+  if (!inv || !estAdmin()) return;
+  if (!confirm("Lever la validation du rapport du "+dateCourte(inv.date)+" ?\n\n"
+    + "Le stock sera recalculé depuis le point de départ précédent et la période "
+    + "redeviendra modifiable. L'opération est inscrite au journal.")) return;
+  inv.valide = null; touche(inv);
+  const restants = inventairesValides();
+  const dernier = restants[restants.length-1];
+  D.verrou = dernier
+    ? { date:dernier.date, inventaireId:dernier.id, parCompteId:dernier.valide.parCompteId,
+        nom:dernier.valide.nom, le:dernier.valide.le }
+    : null;
+  D.meta.verrou = maintenant();
+  journaliser("Validation levée", "inventaire du "+dateCourte(inv.date));
+  invRefCle = null; invSaisie = {};
+  enregistrer(); fermerFeuille(); rafraichir();
+  signaler("Validation levée");
+}
 
 function rendreHistoInv(){
   const zone = document.getElementById("histoInv");
   if (!D.inventaires.length){ zone.innerHTML = ""; return; }
   const invs = D.inventaires.slice().reverse();
-  zone.innerHTML = '<div class="titre"><b>Inventaires validés</b></div><div class="liste">'
+  zone.innerHTML = '<div class="titre"><b>Comptages et rapports</b></div><div class="liste">'
     + invs.map(inv=>{
         const ec = inv.lignes.filter(l=>l.ecart!==0).length;
         const mq = inv.lignes.reduce((s,l)=> s + (l.ecart<0?-l.ecart:0), 0);
         const val = inv.lignes.reduce((s,l)=> s + (l.ecart<0 ? -l.ecart*(l.pv||0) : 0), 0);
+        const etat = inv.valide
+          ? 'validé par ' + ech(inv.valide.nom)
+          : '<span class="etiq etiq-attente">en attente de validation</span>';
         return '<button class="ligne" data-inv="'+inv.id+'">'
           + '<span class="corps"><span class="nom">'+dateLongue(inv.date)+'</span>'
           + '<span class="meta">'+inv.lignes.length+' comptées · '+ec+' écart'+(ec>1?"s":"")
-          + (val?' · '+argent(val)+' de manque':'')+'</span></span>'
+          + (val?' · '+argent(val)+' de manque':'')+'</span>'
+          + '<span class="meta">'+etat+'</span></span>'
           + '<span class="chiffre"><span class="q num" style="font-size:1.25rem;color:'
           + (mq?"var(--rouge)":"var(--vert)")+'">'+(mq?"−"+nombre(mq):"0")+'</span>'
           + '<span class="u">manquantes</span></span></button>';
@@ -1399,16 +2104,44 @@ function detailInventaire(iid){
             + '</td></tr>').join("")
           + '</tbody></table>'
         : '<p class="aide">Aucun écart : tous les comptages correspondaient au théorique.</p>')
-    + '<button class="btn btn-fant" id="iImp" style="margin-top:14px">Imprimer cet inventaire</button>'
-    + '<button class="btn btn-danger" id="iDel">Supprimer cet inventaire</button>'
+    + (inv.valide
+        ? '<p class="aide" style="margin-top:14px"><b>Rapport validé</b> par '
+          + ech(inv.valide.nom) + ' le ' + horodatage(inv.valide.le)
+          + '. Le stock compté sert de point de départ aux calculs, et les saisies jusqu\'au '
+          + dateCourte(inv.date) + ' sont figées.</p>'
+          + (estAdmin() ? '<button class="btn btn-fant" id="iLever">Lever la validation</button>' : '')
+        : '<p class="aide" style="margin-top:14px">Comptage saisi par '
+          + ech(inv.saisiPar || "—")
+          + (inv.saisiLe ? ' le ' + horodatage(inv.saisiLe) : '')
+          + '. <b>En attente de validation</b> : le stock n\'est pas encore recalé.</p>'
+          + (estAdmin()
+              ? '<button class="btn" id="iValider">Valider le rapport et clôturer la période</button>'
+              : '<p class="aide">Seul l\'administrateur peut valider ce rapport.</p>'))
+    + '<button class="btn btn-fant" id="iImp" style="margin-top:9px">Imprimer ce rapport</button>'
+    + (estAdmin() ? '<button class="btn btn-danger" id="iDel">Supprimer ce comptage</button>' : '')
     + '<button class="btn btn-fant" id="iNon">Fermer</button>',
   ()=>{
     document.getElementById("iNon").addEventListener("click", fermerFeuille);
     document.getElementById("iImp").addEventListener("click", ()=>imprimerInventaire(inv));
-    document.getElementById("iDel").addEventListener("click", ()=>{
-      if (!confirm("Supprimer cet inventaire ? Les stocks seront recalculés depuis le point de départ précédent.")) return;
+    const bv = document.getElementById("iValider");
+    if (bv) bv.addEventListener("click", ()=>validerRapport(iid, false));
+    const bl = document.getElementById("iLever");
+    if (bl) bl.addEventListener("click", ()=>leverCloture(iid));
+    const bd = document.getElementById("iDel");
+    if (bd) bd.addEventListener("click", ()=>{
+      if (inv.valide && !confirm("Ce rapport est validé. Le supprimer lèvera aussi la clôture. Continuer ?")) return;
+      if (!confirm("Supprimer ce comptage ? Les stocks seront recalculés depuis le point de départ précédent.")) return;
+      marquerSupprime("inventaire", iid);
       D.inventaires = D.inventaires.filter(x=>x.id!==iid);
-      invRefCle = null; enregistrer(); fermerFeuille(); rafraichir(); signaler("Inventaire supprimé");
+      const restants = inventairesValides();
+      const dernier = restants[restants.length-1];
+      D.verrou = dernier
+        ? { date:dernier.date, inventaireId:dernier.id, parCompteId:dernier.valide.parCompteId,
+            nom:dernier.valide.nom, le:dernier.valide.le }
+        : null;
+      invRefCle = null;
+      journaliser("Comptage supprimé", dateCourte(inv.date));
+      enregistrer(); fermerFeuille(); rafraichir(); signaler("Comptage supprimé");
     });
   });
 }
@@ -1438,10 +2171,14 @@ function rendreRapports(){
     +   '<button class="btn btn-fant" data-p="mois" style="padding:9px;font-size:.75rem">Ce mois</button>'
     + '</div>'
     + '<div class="stat"><span>Chiffre d\'affaires</span><b class="num argent">'+argent(a.ca)+'</b></div>'
-    + '<div class="stat"><span>Marge brute estimée</span><b class="num">'+argent(a.marge)+'</b></div>'
+    + (voitAchats()
+        ? '<div class="stat"><span>Marge brute estimée</span><b class="num">'+argent(a.marge)+'</b></div>'
+        : '')
     + '<div class="stat"><span>Unités vendues</span><b class="num">'+nombre(a.vendues)+'</b></div>'
     + '<div class="stat"><span>Unités reçues</span><b class="num">'+nombre(a.recues)+'</b></div>'
-    + '<div class="stat"><span>Achats de marchandise</span><b class="num">'+argent(a.achats)+'</b></div>'
+    + (voitAchats()
+        ? '<div class="stat"><span>Achats de marchandise</span><b class="num">'+argent(a.achats)+'</b></div>'
+        : '')
     + '<div class="stat"><span>Jours de vente saisis</span><b class="num">'+a.jours+'</b></div>'
     + '<div class="stat"><span>Recette moyenne par jour</span><b class="num">'+argent(a.jours?a.ca/a.jours:0)+'</b></div>'
     + (a.lignes.length
@@ -1455,7 +2192,9 @@ function rendreRapports(){
 
     + '<div class="bloc"><h3>Stock actuel</h3><div class="bloc-corps">'
     + '<div class="stat"><span>Unités en stock</span><b class="num">'+nombre(et.unites)+'</b></div>'
-    + '<div class="stat"><span>Valeur au prix d\'achat</span><b class="num">'+argent(et.valeurAchat)+'</b></div>'
+    + (voitAchats()
+        ? '<div class="stat"><span>Valeur au prix d\'achat</span><b class="num">'+argent(et.valeurAchat)+'</b></div>'
+        : '')
     + '<div class="stat"><span>Valeur au prix de vente</span><b class="num argent">'+argent(et.valeurVente)+'</b></div>'
     + '<div class="stat"><span>Boissons à surveiller</span><b class="num'+(et.alertes.length?' mal':'')+'">'+et.alertes.length+'</b></div>'
     + (et.alertes.length ? '<p class="aide" style="margin:10px 0 0">'
@@ -1518,14 +2257,22 @@ const suffixe = () => aujourdhui().replace(/-/g,"");
 
 function exporterStock(){
   const et = etatStock();
-  const l = [[(D.etablissement+" — Stock au ")+dateLongue(aujourdhui())],[],
-    ["Boisson","Stock","Prix d'achat","Prix de vente","Valeur achat","Valeur vente","Référence du calcul"]];
+  const avecAchat = voitAchats();
+  const l = [[(D.etablissement+" — Stock au ")+dateLongue(aujourdhui())],
+    ["Édité par " + (session ? session.nom : "—")],[],
+    avecAchat
+      ? ["Boisson","Stock","Prix d'achat","Prix de vente","Valeur achat","Valeur vente","Référence du calcul"]
+      : ["Boisson","Stock","Prix de vente","Valeur vente","Référence du calcul"]];
   et.lignes.forEach(b=>{
     const r = reference(b.id, null), s = stockDe(b);
-    l.push([b.nom, s, b.prixAchat, b.prixVente, s*b.prixAchat, s*b.prixVente,
-            r.libelle+" ("+nombre(r.base)+")"]);
+    l.push(avecAchat
+      ? [b.nom, s, prixAchatDe(b), b.prixVente, s*prixAchatDe(b), s*b.prixVente,
+         r.libelle+" ("+nombre(r.base)+")"]
+      : [b.nom, s, b.prixVente, s*b.prixVente, r.libelle+" ("+nombre(r.base)+")"]);
   });
-  l.push([], ["Total", et.unites, "", "", et.valeurAchat, et.valeurVente, ""]);
+  l.push([], avecAchat
+    ? ["Total", et.unites, "", "", et.valeurAchat, et.valeurVente, ""]
+    : ["Total", et.unites, "", et.valeurVente, ""]);
   telecharger("GEBEN-stock-"+suffixe()+".csv", versCSV(l), "text/csv");
 }
 
@@ -1533,19 +2280,28 @@ function exporterActivite(){
   const a = activite(periode.debut, periode.fin);
   const l = [[(D.etablissement+" — Point d'activité")],
     ["Du "+dateLongue(a.debut)+" au "+dateLongue(a.fin)],[],
-    ["Chiffre d'affaires", a.ca],["Marge brute estimée", a.marge],
-    ["Unités vendues", a.vendues],["Unités reçues", a.recues],
-    ["Achats de marchandise", a.achats],["Jours de vente saisis", a.jours],[],
-    ["Boisson","Unités vendues","Unités reçues","Chiffre d'affaires","Marge"]];
-  a.lignes.forEach(x=> l.push([x.nom, x.vendues, x.recues, x.ca, x.marge]));
-  l.push(["Total", a.vendues, a.recues, a.ca, a.marge]);
+    ["Chiffre d'affaires", a.ca]]
+    .concat(voitAchats() ? [["Marge brute estimée", a.marge]] : [])
+    .concat([["Unités vendues", a.vendues],["Unités reçues", a.recues]])
+    .concat(voitAchats() ? [["Achats de marchandise", a.achats]] : [])
+    .concat([["Jours de vente saisis", a.jours],[],
+      voitAchats()
+        ? ["Boisson","Unités vendues","Unités reçues","Chiffre d'affaires","Marge"]
+        : ["Boisson","Unités vendues","Unités reçues","Chiffre d'affaires"]]);
+  a.lignes.forEach(x=> l.push(voitAchats()
+    ? [x.nom, x.vendues, x.recues, x.ca, x.marge]
+    : [x.nom, x.vendues, x.recues, x.ca]));
+  l.push(voitAchats() ? ["Total", a.vendues, a.recues, a.ca, a.marge]
+                      : ["Total", a.vendues, a.recues, a.ca]);
 
   l.push([], ["Ventes jour par jour"], ["Date","Boisson","Quantité","Prix unitaire","Montant"]);
-  D.journees.filter(j=>j.date>=a.debut&&j.date<=a.fin)
+  /* l'en-tête est remplacé juste après pour inclure l'auteur de la saisie */
+  l[l.length-1] = ["Date","Saisi par","Boisson","Quantité","Prix unitaire","Montant"];
+  D.saisies.filter(j=>j.date>=a.debut&&j.date<=a.fin)
     .sort((x,y)=>x.date.localeCompare(y.date))
     .forEach(j=> j.lignes.forEach(x=>{
       const b = boisson(x.boissonId);
-      l.push([x.date, b?b.nom:x.nom, x.qte, x.pu, x.qte*x.pu]);
+      l.push([j.date, j.nom||"—", b?b.nom:x.nom, x.qte, x.pu, x.qte*x.pu]);
     }));
 
   l.push([], ["Entrées de stock"], ["Date","Fournisseur","Boisson","Quantité"]);
@@ -1566,7 +2322,8 @@ function exporterInventaire(inv){
     ["Point de départ : "+(inv.refLibelle||"origine")],[],
     ["Boisson","Stock de référence","Entrées période","Ventes période","Stock théorique","Stock réel","Écart","Valeur de l'écart"]];
   inv.lignes.forEach(x=> l.push([x.nom, x.base, x.entrees, x.ventes, x.theorique, x.reel, x.ecart,
-    Math.round(x.ecart * (x.ecart<0 ? (x.pv||0) : (x.pa||0)))]));
+    Math.round(x.ecart * (x.ecart<0 ? (x.pv||0)
+      : (voitAchats() ? prixAchatDe(boisson(x.boissonId)) : 0)))]));
   const mq = inv.lignes.reduce((s,x)=>s+(x.ecart<0?-x.ecart:0),0);
   const sp = inv.lignes.reduce((s,x)=>s+(x.ecart>0?x.ecart:0),0);
   l.push([], ["Unités manquantes", mq], ["Unités en surplus", sp],
@@ -1585,15 +2342,18 @@ function imprimerRapport(){
     enteteImpression("Rapport de stock et d'activité")
     + "<h2>Activité du "+dateLongue(a.debut)+" au "+dateLongue(a.fin)+"</h2>"
     + '<div class="res"><div>Chiffre d\'affaires<b>'+argent(a.ca)+'</b></div>'
-    + '<div>Marge brute<b>'+argent(a.marge)+'</b></div>'
+    + (voitAchats() ? '<div>Marge brute<b>'+argent(a.marge)+'</b></div>' : '')
     + '<div>Unités vendues<b>'+nombre(a.vendues)+'</b></div>'
     + '<div>Unités reçues<b>'+nombre(a.recues)+'</b></div></div>'
     + (a.lignes.length
-        ? "<table><thead><tr><th>Boisson</th><th>Vendues</th><th>Reçues</th><th>Chiffre d'affaires</th><th>Marge</th></tr></thead><tbody>"
+        ? "<table><thead><tr><th>Boisson</th><th>Vendues</th><th>Reçues</th><th>Chiffre d'affaires</th>"
+          + (voitAchats() ? "<th>Marge</th>" : "") + "</tr></thead><tbody>"
           + a.lignes.map(l=>"<tr><td>"+ech(l.nom)+"</td><td>"+nombre(l.vendues)+"</td><td>"
-            + nombre(l.recues)+"</td><td>"+argent(l.ca)+"</td><td>"+argent(l.marge)+"</td></tr>").join("")
+            + nombre(l.recues)+"</td><td>"+argent(l.ca)+"</td>"
+            + (voitAchats() ? "<td>"+argent(l.marge)+"</td>" : "")+"</tr>").join("")
           + "</tbody><tfoot><tr><td>Total</td><td>"+nombre(a.vendues)+"</td><td>"+nombre(a.recues)
-          + "</td><td>"+argent(a.ca)+"</td><td>"+argent(a.marge)+"</td></tr></tfoot></table>"
+          + "</td><td>"+argent(a.ca)+"</td>"
+          + (voitAchats() ? "<td>"+argent(a.marge)+"</td>" : "")+"</tr></tfoot></table>"
         : "<p>Aucun mouvement sur cette période.</p>")
     + "<h2>Stock au "+dateLongue(aujourdhui())+"</h2>"
     + "<table><thead><tr><th>Boisson</th><th>Stock</th><th>Prix de vente</th><th>Valeur vente</th></tr></thead><tbody>"
@@ -1602,7 +2362,9 @@ function imprimerRapport(){
              + "</td><td>"+argent(s*b.prixVente)+"</td></tr>"; }).join("")
     + "</tbody><tfoot><tr><td>Total</td><td>"+nombre(et.unites)+"</td><td></td><td>"
     + argent(et.valeurVente)+"</td></tr></tfoot></table>"
-    + '<div class="pied">Valeur du stock au prix d\'achat : '+argent(et.valeurAchat)
+    + '<div class="pied">'
+    + (voitAchats() ? 'Valeur du stock au prix d\'achat : '+argent(et.valeurAchat)+'. ' : '')
+    + 'Édité par ' + ech(session ? session.nom : "—")
     + ". Stock calculé depuis le dernier inventaire de chaque boisson, plus les entrées, moins les ventes.</div>";
   setTimeout(()=>window.print(), 120);
 }
@@ -1618,7 +2380,10 @@ function imprimerInventaire(inv){
     + '<div>Unités manquantes<b>'+nombre(mq)+'</b></div>'
     + '<div>Unités en surplus<b>'+nombre(sp)+'</b></div>'
     + '<div>Manque à gagner<b>'+argent(val)+'</b></div></div>'
-    + "<p>Point de départ : "+ech(inv.refLibelle||"origine")
+    + "<p>" + (inv.valide
+        ? "Rapport validé par " + ech(inv.valide.nom) + " le " + horodatage(inv.valide.le)
+        : "Comptage en attente de validation") + ". "
+    + "Point de départ : "+ech(inv.refLibelle||"origine")
     + ". Théorique = stock de référence + entrées de la période − ventes de la période.</p>"
     + "<h2>Détail par boisson</h2>"
     + "<table><thead><tr><th>Boisson</th><th>Référence</th><th>Entrées</th><th>Ventes</th>"
@@ -1636,27 +2401,37 @@ function imprimerInventaire(inv){
    SAUVEGARDE
    ===================================================================== */
 function creerSauvegarde(){
+  D.derniereSauvegarde = new Date().toISOString();
+  journaliser("Sauvegarde créée", "fichier exporté");
   telecharger("GEBEN-sauvegarde-"+suffixe()+".json",
     JSON.stringify({version:2, exporteLe:new Date().toISOString(), donnees:D}, null, 1),
     "application/json");
 }
 function restaurerSauvegarde(){
+  if (!estAdmin()){ signaler("Réservé à l'administrateur"); return; }
   const inp = document.createElement("input");
   inp.type="file"; inp.accept=".json,application/json";
   inp.addEventListener("change", ()=>{
     const f = inp.files && inp.files[0]; if (!f) return;
     const lec = new FileReader();
-    lec.onload = ()=>{
+    lec.onload = async ()=>{
       try{
         const lu = JSON.parse(lec.result);
         const d = lu && lu.donnees ? lu.donnees : lu;
         if (!d || !Array.isArray(d.boissons)) throw new Error("format");
         if (!confirm("Remplacer toutes les données actuelles ?\n\n"+d.boissons.length
-          +" boissons, "+(d.journees||[]).length+" journées de vente.")) return;
+          +" boissons, "+((d.saisies||d.journees||[])).length+" saisies de vente.")) return;
+        await Depot.ajouterInstantane(D, "avant restauration d'un fichier");
         D = normaliser(d);
         invRefCle=null; invSaisie={}; periode=null;
-        appliquerTheme(); chargerJournee(dateVentes);
-        enregistrer(); rafraichir(); signaler("Sauvegarde restaurée");
+        /* la sauvegarde contient ses propres comptes et son propre coffre :
+           la session en cours n'a plus de sens, on repasse par la connexion */
+        session = null; cleCoffre = null; achats = null;
+        appliquerTheme();
+        fermerFeuille();
+        enregistrer();
+        if (!D.comptes.length) ecranConfiguration(); else ecranConnexion();
+        signaler("Sauvegarde restaurée — reconnectez-vous");
       }catch(e){ signaler("Fichier illisible : choisissez une sauvegarde GEBEN"); }
     };
     lec.readAsText(f);
@@ -1664,11 +2439,962 @@ function restaurerSauvegarde(){
   inp.click();
 }
 function effacerTout(){
+  if (!estAdmin()){ signaler("Réservé à l'administrateur"); return; }
   if (!confirm("Effacer définitivement toutes les données ?\n\nCréez une sauvegarde avant.")) return;
   if (!confirm("Dernière confirmation : tout effacer ?")) return;
+  journaliser("Effacement total", "toutes les données de gestion");
+  Depot.ajouterInstantane(D, "avant effacement total");
+  const memeComptes = D.comptes, memeCoffre = D.coffre, memJournal = D.journal;
   D = normaliser({ etablissement:D.etablissement, theme:D.theme, dateDepart:aujourdhui() });
+  /* les comptes, le coffre et le journal survivent : effacer la gestion ne doit
+     pas faire disparaître les traces ni obliger à tout reconfigurer */
+  D.comptes = memeComptes; D.coffre = memeCoffre; D.journal = memJournal;
+  achats = {}; if (cleCoffre) ecrireCoffre();
   invSaisie={}; saisieVentes={}; invRefCle=null; periode=null;
-  enregistrer(); rafraichir(); signaler("Toutes les données ont été effacées");
+  enregistrer(); fermerFeuille(); rafraichir();
+  signaler("Toutes les données de gestion ont été effacées");
+}
+
+/* =====================================================================
+   SYNCHRONISATION
+   Chaque enregistrement part chiffré vers une table distante. Le serveur ne
+   voit que des blocs opaques : ni les ventes, ni les prix, ni les noms. La
+   phrase de chiffrement ne quitte jamais les téléphones.
+   ===================================================================== */
+const CLE_SYNC = "geben_sync";
+
+const Synchro = {
+  cfg: null, cle: null, enCours: false, minuteur: null, dernier: null,
+
+  async charger(){
+    this.cfg = await Depot.lire(CLE_SYNC);
+    if (!this.cfg) this.cfg = { url:"", cle:"", table:"geben_sync", bar:"", phrase:"",
+                                auto:true, filigrane:"", envoyes:{} };
+    if (!this.cfg.envoyes) this.cfg.envoyes = {};
+    return this.cfg;
+  },
+  async sauver(){ this.cle = null; await Depot.ecrire(CLE_SYNC, this.cfg); },
+  active(){ const c = this.cfg; return !!(c && c.url && c.cle && c.bar && c.phrase); },
+
+  async cleRangee(){
+    if (this.cle) return this.cle;
+    /* sel déterministe tiré de l'identifiant du bar : deux téléphones avec la
+       même phrase obtiennent la même clé, sans rien s'échanger */
+    const g = new Uint8Array(await sc().digest("SHA-256",
+      new TextEncoder().encode(this.cfg.bar)));
+    this.cle = await cleDepuis(this.cfg.phrase, enB64(g.slice(0,16)));
+    return this.cle;
+  },
+  adresse(q){
+    return this.cfg.url.replace(/\/+$/,"") + "/rest/v1/"
+         + (this.cfg.table || "geben_sync") + (q || "");
+  },
+  entetes(extra){
+    return Object.assign({ apikey:this.cfg.cle, Authorization:"Bearer " + this.cfg.cle,
+                           "Content-Type":"application/json" }, extra || {});
+  },
+
+  async tirer(){
+    const distant = { boissons:[], receptions:[], saisies:[], inventaires:[],
+                      comptes:[], supprimes:[], journal:[] };
+    let depuis = this.cfg.filigrane || "1970-01-01T00:00:00Z";
+    let filigrane = this.cfg.filigrane || "";
+    let lu = 0;
+
+    for (let page = 0; page < 40; page++){
+      const q = "?bar_id=eq." + encodeURIComponent(this.cfg.bar)
+              + "&updated_at=gt." + encodeURIComponent(depuis)
+              + "&select=type,rec_id,maj,iv,charge,updated_at"
+              + "&order=updated_at.asc&limit=500";
+      const r = await fetch(this.adresse(q), { headers:this.entetes() });
+      if (!r.ok) throw new Error("lecture refusée par le serveur (" + r.status + ")");
+      const lignes = await r.json();
+      if (!lignes.length) break;
+
+      for (const ligne of lignes){
+        let objet;
+        try{ objet = await this.dechiffrer(ligne); }
+        catch(e){ throw new Error("phrase de chiffrement incorrecte"); }
+        switch (ligne.type){
+          case "boisson":    distant.boissons.push(objet); break;
+          case "reception":  distant.receptions.push(objet); break;
+          case "saisie":     distant.saisies.push(objet); break;
+          case "inventaire": distant.inventaires.push(objet); break;
+          case "compte":     distant.comptes.push(objet); break;
+          case "supprime":   distant.supprimes.push(objet); break;
+          case "journal":    distant.journal.push(objet); break;
+          case "reglages":   distant.reglages = Object.assign({ maj:ligne.maj }, objet); break;
+          case "coffre":     distant.coffre = { maj:ligne.maj, valeur:objet }; break;
+          case "verrou":     distant.verrou = { maj:ligne.maj, valeur:objet }; break;
+        }
+        if (String(ligne.updated_at) > String(filigrane)) filigrane = ligne.updated_at;
+        lu++;
+      }
+      depuis = lignes[lignes.length - 1].updated_at;
+      if (lignes.length < 500) break;
+    }
+    return { distant, filigrane, lu };
+  },
+
+  async chiffrer(objet){
+    return await chiffrer(await this.cleRangee(),
+      new TextEncoder().encode(JSON.stringify(objet)));
+  },
+  async dechiffrer(ligne){
+    const o = await dechiffrer(await this.cleRangee(), ligne.iv, ligne.charge);
+    return JSON.parse(new TextDecoder().decode(o));
+  },
+
+  async lignesAEnvoyer(){
+    /* On retient ce qui a déjà été envoyé enregistrement par enregistrement.
+       Un simple horodatage global ne suffirait pas : le téléphone dont
+       l'horloge retarde produirait des dates antérieures au repère, et ses
+       modifications ne partiraient jamais. */
+    const dejaEnvoye = this.cfg.envoyes || {};
+    const lignes = [];
+    const marques = [];
+    const ajouter = async (type, recId, maj, objet) => {
+      const m = String(maj || maintenant());
+      const k = type + "/" + recId;
+      if (dejaEnvoye[k] === m) return;
+      const c = await this.chiffrer(objet);
+      lignes.push({ bar_id:this.cfg.bar, type, rec_id:recId, maj:m,
+                    iv:c.iv, charge:c.donnees });
+      marques.push([k, m]);
+    };
+    for (const { cle, type } of COLLECTIONS)
+      for (const o of D[cle]) await ajouter(type, o.id, o.maj, o);
+    for (const t of D.supprimes) await ajouter("supprime", t.type + "/" + t.id, t.le, t);
+    for (const e of (D.journal || [])) await ajouter("journal", e.id || e.le, e.le, e);
+    await ajouter("reglages", "reglages", D.meta.reglages, {
+      etablissement: D.etablissement, theme: D.theme,
+      dateDepart: D.dateDepart, derniereSauvegarde: D.derniereSauvegarde });
+    if (D.coffre) await ajouter("coffre", "coffre", D.meta.coffre, D.coffre);
+    if (D.verrou) await ajouter("verrou", "verrou", D.meta.verrou, D.verrou);
+    return { lignes, marques };
+  },
+
+  async pousser(){
+    const { lignes, marques } = await this.lignesAEnvoyer();
+    for (let i = 0; i < lignes.length; i += 100){
+      const lot = lignes.slice(i, i + 100);
+      const r = await fetch(this.adresse(), {
+        method: "POST",
+        headers: this.entetes({ Prefer: "resolution=merge-duplicates,return=minimal" }),
+        body: JSON.stringify(lot)
+      });
+      if (!r.ok) throw new Error("écriture refusée par le serveur (" + r.status + ")");
+      /* on ne marque que ce qui est réellement parti : un échec au milieu
+         laisse le reste à renvoyer au prochain passage */
+      for (let j = i; j < i + lot.length; j++)
+        this.cfg.envoyes[marques[j][0]] = marques[j][1];
+    }
+    return { envoyees: lignes.length };
+  },
+
+  async synchroniser(discret){
+    if (!this.active()){ if (!discret) signaler("Synchronisation non configurée"); return null; }
+    if (this.enCours) return null;
+    if (typeof fetch !== "function"){ if (!discret) signaler("Ce navigateur ne peut pas contacter le serveur"); return null; }
+    if (navigator && navigator.onLine === false){
+      if (!discret) signaler("Pas de connexion — la synchronisation attendra");
+      return null;
+    }
+    this.enCours = true;
+    try{
+      const recu = await this.tirer();
+      const bilan = fusionner(recu.distant);
+      if (bilan.coffreRemplace) await verifierCoffreApresFusion();
+      /* on oublie le repère d'envoi de ces enregistrements pour les réexpédier */
+      bilan.aRenvoyer.forEach(k => { delete this.cfg.envoyes[k]; });
+      const envoi = await this.pousser();
+
+      this.cfg.filigrane = recu.filigrane || this.cfg.filigrane;
+      await this.sauver();
+      await Depot.ecrire(CLE, D);
+
+      this.dernier = { le: maintenant(), recu: recu.lu, envoye: envoi.envoyees,
+                       ajoutes: bilan.ajoutes, remplaces: bilan.remplaces, erreur: null };
+      if (vueActive) rafraichir();
+      if (!discret)
+        signaler(recu.lu || envoi.envoyees
+          ? "Synchronisé · " + recu.lu + " reçus, " + envoi.envoyees + " envoyés"
+          : "Déjà à jour");
+      return this.dernier;
+    }catch(e){
+      this.dernier = { le: maintenant(), erreur: e.message || "échec" };
+      if (!discret) signaler("Synchronisation : " + this.dernier.erreur);
+      return this.dernier;
+    }finally{
+      this.enCours = false;
+    }
+  }
+};
+
+/* déclenchement discret : après une salve d'écritures, et au retour à l'écran */
+function planifierSynchro(){
+  if (!Synchro.cfg || !Synchro.cfg.auto || !Synchro.active()) return;
+  clearTimeout(Synchro.minuteur);
+  Synchro.minuteur = setTimeout(()=> Synchro.synchroniser(true), 15000);
+}
+document.addEventListener("visibilitychange", ()=>{
+  if (!document.hidden && session && Synchro.cfg && Synchro.cfg.auto) Synchro.synchroniser(true);
+});
+
+/* =====================================================================
+   COMPTES ET SUIVI  (administrateur)
+   ===================================================================== */
+document.getElementById("btnRetourAdmin").addEventListener("click", ()=> aller("boissons"));
+
+function rendreAdmin(){
+  if (!estAdmin()){ aller("boissons"); return; }
+  const zone = document.getElementById("corpsAdmin");
+  const journal = D.journal.slice().reverse();
+
+  zone.innerHTML =
+    '<div class="titre"><b>Comptes</b><span>'+D.comptes.length
+    + ' compte'+(D.comptes.length>1?'s':'')+'</span></div>'
+    + '<div class="liste">'
+    + D.comptes.map(c=>{
+        const etiq = c.role==="admin"
+          ? '<span class="etiq etiq-admin">Administrateur</span>'
+          : (c.actif===false ? '<span class="etiq etiq-off">Désactivé</span>' : 'Utilisateur');
+        return '<button class="ligne" data-compte="'+c.id+'">'
+          + '<span class="corps"><span class="nom">'+ech(c.nom)+'</span>'
+          + '<span class="meta">'+etiq+'</span>'
+          + '<span class="meta">dernière connexion '+horodatage(c.derniereConnexion)+'</span></span>'
+          + '<span class="chiffre"><span class="q num" style="font-size:1.25rem">'
+          + nombre(c.nbConnexions||0)+'</span><span class="u">connexions</span></span></button>';
+      }).join("")
+    + '</div>'
+    + '<div class="zone"><button class="btn" id="adNouveau">Créer un compte utilisateur</button>'
+    + '<p class="aide" style="margin-top:11px">Il n\'y a qu\'un seul administrateur. C\'est '
+    + 'volontaire : les prix d\'achat sont chiffrés avec son mot de passe, et un second '
+    + 'administrateur ne pourrait pas les déchiffrer sans affaiblir la protection.</p></div>'
+
+    + '<div class="titre"><b>Clôture en cours</b></div>'
+    + '<div class="bloc"><div class="bloc-corps">'
+    + (D.verrou
+        ? '<div class="stat"><span>Saisies figées jusqu\'au</span><b>'+dateCourte(D.verrou.date)+'</b></div>'
+          + '<div class="stat"><span>Validée par</span><b>'+ech(D.verrou.nom)+'</b></div>'
+          + '<div class="stat"><span>Le</span><b style="font-size:.875rem">'+horodatage(D.verrou.le)+'</b></div>'
+        : '<p class="aide" style="margin:0">Aucune période clôturée. Validez un rapport '
+          + 'd\'inventaire depuis l\'onglet Inventaire pour figer les saisies antérieures.</p>')
+    + '</div></div>'
+
+    + '<div class="titre"><b>Journal</b><span>'+journal.length+' évènement'
+    + (journal.length>1?'s':'')+'</span></div>'
+    + (journal.length
+        ? journal.slice(0,60).map(e=>
+            '<div class="jrn"><time>'+horodatage(e.le)+'</time>'
+            + '<span><b>'+ech(e.action)+'</b>'+(e.detail?' — '+ech(e.detail):'')
+            + '<br><span style="color:var(--muet)">'+ech(e.nom)+'</span></span></div>').join("")
+        : '<div class="vide">Aucun évènement enregistré.</div>')
+    + '<div class="zone"><button class="btn btn-fant" id="adJournal">Exporter le journal en Excel</button>'
+    + '<p class="aide" style="margin-top:11px">Les 400 derniers évènements sont conservés : '
+    + 'connexions, refus de connexion, déconnexions, comptages, validations de rapports, '
+    + 'corrections en période clôturée et gestion des comptes.</p></div>';
+
+  zone.querySelectorAll("[data-compte]").forEach(el=>
+    el.addEventListener("click", ()=> formulaireCompte(el.dataset.compte)));
+  document.getElementById("adNouveau").addEventListener("click", ()=> formulaireCompte(null));
+  document.getElementById("adJournal").addEventListener("click", exporterJournal);
+}
+
+function exporterJournal(){
+  const l = [[D.etablissement + " — Journal de l'application"],
+    ["Édité le " + dateLongue(aujourdhui()) + " par " + (session?session.nom:"—")],[],
+    ["Date et heure","Compte","Évènement","Détail"]];
+  D.journal.slice().reverse().forEach(e=> l.push([horodatage(e.le), e.nom, e.action, e.detail]));
+  l.push([], ["Suivi des connexions"], ["Compte","Rôle","Dernière connexion","Nombre de connexions","État"]);
+  D.comptes.forEach(c=> l.push([c.nom, c.role==="admin"?"Administrateur":"Utilisateur",
+    horodatage(c.derniereConnexion), c.nbConnexions||0, c.actif===false?"Désactivé":"Actif"]));
+  telecharger("GEBEN-journal-"+suffixe()+".csv", versCSV(l), "text/csv");
+}
+
+function formulaireCompte(cid){
+  const c = cid ? compteDe(cid) : null;
+  const moi = c && session && c.id === session.id;
+
+  ouvrirFeuille(
+    "<h2>" + (c ? ech(c.nom) : "Nouveau compte utilisateur") + "</h2>"
+    + (c
+        ? '<p class="aide">' + (c.role==="admin" ? "Administrateur" : "Utilisateur")
+          + ' · créé le ' + horodatage(c.creeLe)
+          + ' · ' + nombre(c.nbConnexions||0) + ' connexion(s)'
+          + ' · dernière le ' + horodatage(c.derniereConnexion) + '</p>'
+        : '<p class="aide">Un utilisateur voit le stock, les ventes, les inventaires et les '
+          + 'rapports, mais ni les prix d\'achat ni les marges. Il ne peut pas valider un rapport '
+          + 'ni modifier une période clôturée.</p>')
+    + '<label><span class="lib">Nom</span><input id="kNom" value="'+(c?ech(c.nom):"")+'" '
+    + 'autocomplete="off" maxlength="30" placeholder="Prénom du serveur"></label>'
+    + '<label style="margin-top:11px"><span class="lib">'
+    + (c ? "Nouveau mot de passe (laisser vide pour ne pas changer)" : "Mot de passe")
+    + '</span><input id="kMdp" type="password" autocomplete="new-password"></label>'
+    + (c && c.role === "admin" && !moi ? "" : "")
+    + '<button class="btn" id="kOk" style="margin-top:12px">'
+    + (c ? "Enregistrer" : "Créer le compte") + '</button>'
+    + (c && c.role !== "admin"
+        ? '<button class="btn btn-fant" id="kActif">'
+          + (c.actif===false ? "Réactiver ce compte" : "Désactiver ce compte") + '</button>'
+          + '<button class="btn btn-danger" id="kDel">Supprimer ce compte</button>'
+        : '')
+    + '<button class="btn btn-fant" id="kNon">Annuler</button>',
+  ()=>{
+    document.getElementById("kNon").addEventListener("click", fermerFeuille);
+
+    document.getElementById("kOk").addEventListener("click", async ()=>{
+      const nom = document.getElementById("kNom").value.trim();
+      const mdp = document.getElementById("kMdp").value;
+      if (!nom){ signaler("Indiquez un nom"); return; }
+      if (D.comptes.some(x => x.nom.toLowerCase()===nom.toLowerCase() && (!c || x.id!==c.id))){
+        signaler("Ce nom est déjà utilisé"); return;
+      }
+      const bouton = document.getElementById("kOk");
+      bouton.setAttribute("disabled",""); bouton.textContent = "Enregistrement…";
+      try{
+        if (!c){
+          if (mdp.length < 4){ throw new Error("court"); }
+          D.comptes.push(await nouveauCompte(nom, mdp, "agent"));
+          journaliser("Compte créé", nom);
+          signaler(nom + " peut maintenant se connecter");
+        } else {
+          const ancien = c.nom;
+          c.nom = nom;
+          if (mdp){
+            if (mdp.length < 4){ throw new Error("court"); }
+            c.sel = enB64(alea(16));
+            c.empreinte = await empreinteDe(mdp, c.sel);
+            /* l'administrateur chiffre le coffre : changer son mot de passe
+               oblige à réenfermer la clé, sinon les prix deviendraient illisibles */
+            if (c.role === "admin"){
+              if (!cleCoffre){ throw new Error("coffre"); }
+              await reenfermerCoffre(mdp);
+            }
+            journaliser("Mot de passe réinitialisé", nom);
+          }
+          if (ancien !== nom) journaliser("Compte renommé", ancien + " → " + nom);
+          if (session && c.id === session.id) session.nom = nom;
+          signaler("Compte enregistré");
+        }
+        enregistrer(); fermerFeuille(); majEntete(); rendreAdmin();
+      }catch(e){
+        bouton.removeAttribute("disabled");
+        bouton.textContent = c ? "Enregistrer" : "Créer le compte";
+        if (e.message === "court") signaler("Quatre caractères au minimum");
+        else if (e.message === "coffre") signaler("Reconnectez-vous avant de changer ce mot de passe");
+        else signaler("Échec de l'enregistrement");
+      }
+    });
+
+    const ba = document.getElementById("kActif");
+    if (ba) ba.addEventListener("click", ()=>{
+      c.actif = (c.actif === false);
+      journaliser(c.actif ? "Compte réactivé" : "Compte désactivé", c.nom);
+      enregistrer(); fermerFeuille(); rendreAdmin();
+      signaler(c.actif ? c.nom + " réactivé" : c.nom + " désactivé");
+    });
+
+    const bd = document.getElementById("kDel");
+    if (bd) bd.addEventListener("click", ()=>{
+      if (!confirm("Supprimer le compte de " + c.nom + " ?\n\nLe journal garde la trace de "
+        + "ses connexions et de ses saisies.")) return;
+      marquerSupprime("compte", c.id);
+      D.comptes = D.comptes.filter(x => x.id !== c.id);
+      journaliser("Compte supprimé", c.nom);
+      enregistrer(); fermerFeuille(); rendreAdmin();
+      signaler(c.nom + " supprimé");
+    });
+  });
+}
+
+async function ouvrirSynchro(){
+  if (!estAdmin()){ signaler("Réservé à l'administrateur"); return; }
+  await Synchro.charger();
+  const c = Synchro.cfg;
+  const d = Synchro.dernier;
+
+  ouvrirFeuille(
+    "<h2>Synchronisation</h2>"
+    + '<p class="aide">Les données partent chiffrées vers une table distante. Le serveur ne '
+    + 'voit que des blocs illisibles : la phrase de chiffrement ne quitte jamais les '
+    + 'téléphones. Chaque appareil garde ses propres saisies, et la fusion les réunit.</p>'
+    + (d
+        ? '<div class="stat"><span>Dernière tentative</span><b style="font-size:.8125rem;color:'
+          + (d.erreur ? "var(--rouge)" : "var(--vert)") + '">'
+          + (d.erreur ? ech(d.erreur) : d.recu + " reçus, " + d.envoye + " envoyés")
+          + '</b></div><div class="stat"><span>Le</span><b style="font-size:.8125rem">'
+          + horodatage(d.le) + '</b></div>'
+        : '')
+    + '<label style="margin-top:12px"><span class="lib">Adresse du serveur</span>'
+    + '<input id="syUrl" value="'+ech(c.url)+'" autocomplete="off" spellcheck="false" '
+    + 'placeholder="https://xxxx.supabase.co"></label>'
+    + '<label style="margin-top:11px"><span class="lib">Clé publique du projet</span>'
+    + '<input id="syCle" value="'+ech(c.cle)+'" autocomplete="off" spellcheck="false" '
+    + 'placeholder="eyJ..."></label>'
+    + '<label style="margin-top:11px"><span class="lib">Identifiant du bar</span>'
+    + '<input id="syBar" value="'+ech(c.bar)+'" autocomplete="off" spellcheck="false"></label>'
+    + '<button class="btn btn-fant" id="syTirage" style="margin-top:8px">Tirer un identifiant</button>'
+    + '<label style="margin-top:11px"><span class="lib">Phrase de chiffrement</span>'
+    + '<input id="syPhrase" value="'+ech(c.phrase)+'" autocomplete="off" spellcheck="false"></label>'
+    + '<p class="aide">L\'identifiant et la phrase doivent être <b>identiques sur tous les '
+    + 'téléphones</b>. Recopiez-les tels quels. Si la phrase diffère, l\'appareil ne pourra '
+    + 'rien lire de ce que les autres ont envoyé.</p>'
+    + '<label style="display:flex;gap:10px;align-items:center;margin:4px 0 14px">'
+    + '<input type="checkbox" id="syAuto" style="width:20px;height:20px;flex:0 0 auto"'
+    + (c.auto ? " checked" : "") + '>'
+    + '<span style="font-size:.8125rem">Synchroniser automatiquement</span></label>'
+    + '<button class="btn" id="sySync">Enregistrer et synchroniser</button>'
+    + '<button class="btn btn-fant" id="syTout">Tout retélécharger depuis le serveur</button>'
+    + '<button class="btn btn-danger" id="syStop">Arrêter la synchronisation</button>'
+    + '<button class="btn btn-fant" id="syFin">Fermer</button>',
+  ()=>{
+    document.getElementById("syTirage").addEventListener("click", ()=>{
+      document.getElementById("syBar").value =
+        "bar-" + enB64(alea(12)).replace(/[^A-Za-z0-9]/g,"").slice(0,16).toLowerCase();
+    });
+    async function relever(){
+      Synchro.cfg.url = document.getElementById("syUrl").value.trim();
+      Synchro.cfg.cle = document.getElementById("syCle").value.trim();
+      Synchro.cfg.bar = document.getElementById("syBar").value.trim();
+      Synchro.cfg.phrase = document.getElementById("syPhrase").value;
+      Synchro.cfg.auto = document.getElementById("syAuto").checked;
+      await Synchro.sauver();
+    }
+    document.getElementById("sySync").addEventListener("click", async ()=>{
+      await relever();
+      if (!Synchro.active()){ signaler("Remplissez les quatre champs"); return; }
+      const b = document.getElementById("sySync");
+      b.setAttribute("disabled",""); b.textContent = "Synchronisation…";
+      const r = await Synchro.synchroniser(false);
+      if (r && !r.erreur) journaliser("Synchronisation",
+        r.recu + " reçus, " + r.envoye + " envoyés");
+      ouvrirSynchro();
+    });
+    document.getElementById("syTout").addEventListener("click", async ()=>{
+      await relever();
+      if (!Synchro.active()){ signaler("Remplissez les quatre champs"); return; }
+      if (!confirm("Tout retélécharger ?\n\nRien n'est effacé : les enregistrements du "
+        + "serveur seront réunis avec ceux du téléphone.")) return;
+      Synchro.cfg.filigrane = ""; Synchro.cfg.envoyes = {};
+      await Synchro.sauver();
+      await Synchro.synchroniser(false);
+      ouvrirSynchro();
+    });
+    document.getElementById("syStop").addEventListener("click", async ()=>{
+      if (!confirm("Arrêter la synchronisation de ce téléphone ?\n\nLes données restent "
+        + "en place, ici comme sur le serveur.")) return;
+      Synchro.cfg = { url:"", cle:"", table:"geben_sync", bar:"", phrase:"",
+                      auto:true, filigrane:"", envoyes:{} };
+      await Synchro.sauver();
+      journaliser("Synchronisation arrêtée", "sur cet appareil");
+      fermerFeuille(); signaler("Synchronisation arrêtée");
+    });
+    document.getElementById("syFin").addEventListener("click", fermerFeuille);
+  });
+}
+
+async function ouvrirInstantanes(){
+  if (!estAdmin()){ signaler("Réservé à l'administrateur"); return; }
+  ouvrirFeuille(
+    "<h2>Historique local</h2>"
+    + '<p class="aide">L\'application garde une copie de vos données à chaque journée '
+    + 'd\'utilisation, ainsi qu\'avant toute opération risquée. Vous pouvez revenir à '
+    + 'l\'une de ces copies. Elles sont dans le téléphone : elles ne remplacent pas une '
+    + 'sauvegarde envoyée ailleurs.</p>'
+    + '<div id="inListe"><p class="aide">Lecture de la base…</p></div>'
+    + '<button class="btn btn-fant" id="inNouveau">Créer une copie maintenant</button>'
+    + '<button class="btn btn-fant" id="inFin">Fermer</button>');
+
+  const liste = await Depot.instantanes();
+  const zone = document.getElementById("inListe");
+  if (!zone) return;
+  zone.innerHTML = liste.length
+    ? '<div class="liste" style="margin:0 calc(var(--pad) * -1) 14px">'
+      + liste.map(i =>
+          '<div class="ligne"><button class="corps" data-inst="'+i.id+'" style="text-align:left">'
+          + '<span class="nom">'+horodatage(i.le)+'</span>'
+          + '<span class="meta">'+ech(i.motif||"automatique")+' · '+poids(i.taille)+'</span></button>'
+          + '<button class="sup" data-supinst="'+i.id+'" aria-label="Supprimer cette copie">&times;</button>'
+          + '</div>').join("")
+      + '</div>'
+    : '<p class="aide">Aucune copie pour l\'instant. La première sera créée automatiquement '
+      + 'à la prochaine écriture.</p>';
+
+  zone.querySelectorAll("[data-inst]").forEach(el =>
+    el.addEventListener("click", ()=> {
+      const i = liste.find(x => String(x.id) === el.dataset.inst);
+      if (i) restaurerInstantane(i.id, horodatage(i.le));
+    }));
+  zone.querySelectorAll("[data-supinst]").forEach(el =>
+    el.addEventListener("click", async ()=>{
+      if (!confirm("Supprimer cette copie ?")) return;
+      await Depot.supprimerInstantane(Number(el.dataset.supinst));
+      ouvrirInstantanes();
+    }));
+  document.getElementById("inNouveau").addEventListener("click", async ()=>{
+    const ok = await Depot.ajouterInstantane(D, "copie manuelle");
+    signaler(ok ? "Copie enregistrée" : "Copie impossible");
+    if (ok) ouvrirInstantanes();
+  });
+  document.getElementById("inFin").addEventListener("click", fermerFeuille);
+}
+
+async function restaurerInstantane(idInstantane, quand){
+  if (!estAdmin()){ signaler("Réservé à l'administrateur"); return; }
+  if (!confirm("Revenir à la copie du " + quand + " ?\n\n"
+    + "Les saisies faites depuis seront perdues : boissons, entrées, ventes et "
+    + "inventaires reviendront à leur état de ce moment.\n\n"
+    + "Les comptes, les mots de passe et les prix d'achat ne sont pas touchés. "
+    + "L'état actuel est mis de côté juste avant, vous pourrez donc revenir.")) return;
+
+  await Depot.ajouterInstantane(D, "avant retour en arrière");
+  const copie = await Depot.lireInstantane(idInstantane);
+  if (!copie){ signaler("Copie illisible"); return; }
+
+  /* Un retour en arrière porte sur les données de gestion, jamais sur les
+     identifiants : ramener des comptes anciens déconnecterait l'utilisateur, et
+     ramener un ancien coffre rendrait les prix d'achat illisibles. */
+  const comptes = D.comptes, coffre = D.coffre, journal = D.journal;
+  const etablissement = D.etablissement, theme = D.theme;
+  const derniereSauvegarde = D.derniereSauvegarde;
+
+  D = normaliser(copie);
+  D.comptes = comptes; D.coffre = coffre; D.journal = journal;
+  D.etablissement = etablissement; D.theme = theme;
+  D.derniereSauvegarde = derniereSauvegarde;
+
+  invRefCle = null; invSaisie = {}; periode = null;
+  chargerJournee(dateVentes);
+  journaliser("Retour à une copie locale", quand);
+  await Depot.ecrire(CLE, D);
+  fermerFeuille(); rafraichir();
+  signaler("Données revenues au " + quand);
+}
+
+function changerMonMotDePasse(){
+  const c = session ? compteDe(session.id) : null;
+  if (!c){ signaler("Compte introuvable"); return; }
+  ouvrirFeuille(
+    "<h2>Changer mon mot de passe</h2>"
+    + '<label><span class="lib">Mot de passe actuel</span>'
+    + '<input id="mpA" type="password" autocomplete="current-password"></label>'
+    + '<label style="margin-top:11px"><span class="lib">Nouveau mot de passe</span>'
+    + '<input id="mpB" type="password" autocomplete="new-password"></label>'
+    + '<label style="margin-top:11px"><span class="lib">Répétez le nouveau mot de passe</span>'
+    + '<input id="mpC" type="password" autocomplete="new-password"></label>'
+    + (c.role === "admin"
+        ? '<p class="aide" style="margin-top:10px">Votre code de secours reste valable : '
+          + 'il n\'est pas lié à votre mot de passe.</p>'
+        : '')
+    + '<button class="btn" id="mpOk" style="margin-top:12px">Enregistrer</button>'
+    + '<button class="btn btn-fant" id="mpNon">Annuler</button>',
+  ()=>{
+    document.getElementById("mpNon").addEventListener("click", fermerFeuille);
+    document.getElementById("mpOk").addEventListener("click", async ()=>{
+      const a = document.getElementById("mpA").value;
+      const b = document.getElementById("mpB").value;
+      const d = document.getElementById("mpC").value;
+      if (b.length < (c.role === "admin" ? 6 : 4)){
+        signaler((c.role === "admin" ? "Six" : "Quatre") + " caractères au minimum"); return;
+      }
+      if (b !== d){ signaler("Les deux mots de passe diffèrent"); return; }
+      const bouton = document.getElementById("mpOk");
+      bouton.setAttribute("disabled",""); bouton.textContent = "Vérification…";
+      if (!await motDePasseValide(c, a)){
+        bouton.removeAttribute("disabled"); bouton.textContent = "Enregistrer";
+        signaler("Mot de passe actuel incorrect"); return;
+      }
+      try{
+        if (c.role === "admin"){
+          if (!cleCoffre) throw new Error("coffre");
+          await reenfermerCoffre(b);
+        }
+        c.sel = enB64(alea(16));
+        c.empreinte = await empreinteDe(b, c.sel);
+        journaliser("Mot de passe changé", c.nom);
+        enregistrer(); fermerFeuille();
+        signaler("Mot de passe changé");
+      }catch(e){
+        bouton.removeAttribute("disabled"); bouton.textContent = "Enregistrer";
+        signaler("Reconnectez-vous avant de changer ce mot de passe");
+      }
+    });
+  });
+}
+
+/* =====================================================================
+   ÉCRANS D'ACCÈS : configuration, connexion, récupération
+   ===================================================================== */
+const ecranAcces = document.getElementById("ecranAcces");
+const accesCorps = document.getElementById("accesCorps");
+const LOGO = '<svg class="logo" viewBox="0 0 512 512" aria-hidden="true">'
+  + '<rect width="512" height="512" rx="112" fill="var(--surface)"/>'
+  + '<path d="M220 56h72v46h-72z" fill="var(--accent)"/>'
+  + '<path d="M232 96h48v106h-48z" fill="var(--accent)"/>'
+  + '<path d="M232 200h48l66 92H166z" fill="var(--accent)"/>'
+  + '<path d="M166 286h180v156a34 34 0 0 1-34 34H200a34 34 0 0 1-34-34z" fill="var(--accent)"/>'
+  + '<path d="M166 336h180v60H166z" fill="var(--surface)"/></svg>';
+
+function afficherAcces(html, apres){
+  accesCorps.innerHTML = html;
+  ecranAcces.classList.add("ouvert");
+  if (apres) apres();
+}
+let messageAccueil = null;
+
+function lancerApplication(){
+  ecranAcces.classList.remove("ouvert");
+  accesCorps.innerHTML = "";
+  if (messageAccueil){ const m = messageAccueil; messageAccueil = null; signaler(m); }
+  chargerJournee(dateVentes);
+  majEntete();
+  aller("boissons");
+}
+function sansChiffrement(){
+  return '<div class="grave"><b>Chiffrement indisponible</b><br>Ce navigateur ne permet pas de '
+    + 'protéger les prix d\'achat. Ouvrez l\'application depuis son adresse en https, '
+    + 'ou installez-la sur l\'écran d\'accueil.</div>';
+}
+
+/* ---------- première utilisation : créer l'administrateur ---------- */
+function ecranConfiguration(){
+  afficherAcces(
+    LOGO
+    + "<h2>Première utilisation</h2>"
+    + '<p class="sous">Créez le compte de l\'administrateur. Il sera le seul à voir les prix '
+    + 'd\'achat et les marges, et le seul à pouvoir valider les rapports d\'inventaire.</p>'
+    + (sc() ? "" : sansChiffrement())
+    + '<label><span class="lib">Votre nom</span><input id="cfgNom" value="Administrateur" '
+    + 'autocomplete="off" maxlength="30"></label>'
+    + '<label style="margin-top:11px"><span class="lib">Mot de passe</span>'
+    + '<input id="cfgMdp" type="password" autocomplete="new-password"></label>'
+    + '<label style="margin-top:11px"><span class="lib">Répétez le mot de passe</span>'
+    + '<input id="cfgMdp2" type="password" autocomplete="new-password"></label>'
+    + '<p class="aide" style="margin-top:10px">Six caractères au minimum. Ce mot de passe '
+    + 'chiffre les prix d\'achat : il ne peut être retrouvé ni par moi ni par personne. '
+    + 'Un code de secours vous sera donné juste après.</p>'
+    + '<button class="btn" id="cfgOk" style="margin-top:6px">Créer le compte administrateur</button>'
+    + '<button class="lien" id="cfgRejoindre">Ce bar existe déjà sur un autre téléphone</button>',
+  ()=>{
+    document.getElementById("cfgRejoindre").addEventListener("click", ecranRejoindre);
+    document.getElementById("cfgOk").addEventListener("click", async ()=>{
+      const nom = document.getElementById("cfgNom").value.trim() || "Administrateur";
+      const m1 = document.getElementById("cfgMdp").value;
+      const m2 = document.getElementById("cfgMdp2").value;
+      if (m1.length < 6){ signaler("Six caractères au minimum"); return; }
+      if (m1 !== m2){ signaler("Les deux mots de passe diffèrent"); return; }
+      if (!sc()){ signaler("Chiffrement indisponible sur ce navigateur"); return; }
+
+      const bouton = document.getElementById("cfgOk");
+      bouton.textContent = "Chiffrement en cours…"; bouton.setAttribute("disabled","");
+      try{
+        const code = nouveauCodeSecours();
+        const contenu = { prixAchat: achatsMigration || {} };
+        const fait = await creerCoffre(m1, code, contenu);
+        D.coffre = fait.coffre;
+        D.meta.coffre = maintenant();
+        D.meta.reglages = maintenant();
+        cleCoffre = fait.cle;
+        achats = contenu.prixAchat;
+        achatsMigration = null;
+        const admin = await nouveauCompte(nom, m1, "admin");
+        admin.derniereConnexion = new Date().toISOString();
+        admin.nbConnexions = 1;
+        D.comptes = [admin];
+        session = { id:admin.id, nom:admin.nom, role:"admin" };
+        journaliser("Configuration initiale", "compte administrateur créé");
+        enregistrer();
+        ecranCodeSecours(code, true);
+      }catch(e){
+        bouton.removeAttribute("disabled");
+        bouton.textContent = "Créer le compte administrateur";
+        signaler("Échec du chiffrement sur ce navigateur");
+      }
+    });
+  });
+}
+
+/* ---------- rejoindre un bar déjà configuré sur un autre téléphone ----------
+   Sans ce chemin, un téléphone neuf créerait un second administrateur et un
+   second coffre : les deux appareils divergeraient définitivement. */
+function ecranRejoindre(){
+  afficherAcces(
+    LOGO
+    + "<h2>Rejoindre un bar existant</h2>"
+    + '<p class="sous">Recopiez les quatre informations affichées dans les Réglages du '
+    + 'téléphone déjà en service, rubrique Synchronisation.</p>'
+    + '<label><span class="lib">Adresse du serveur</span>'
+    + '<input id="rjUrl" autocomplete="off" spellcheck="false" placeholder="https://xxxx.supabase.co"></label>'
+    + '<label style="margin-top:11px"><span class="lib">Clé publique du projet</span>'
+    + '<input id="rjCle" autocomplete="off" spellcheck="false"></label>'
+    + '<label style="margin-top:11px"><span class="lib">Identifiant du bar</span>'
+    + '<input id="rjBar" autocomplete="off" spellcheck="false"></label>'
+    + '<label style="margin-top:11px"><span class="lib">Phrase de chiffrement</span>'
+    + '<input id="rjPhrase" autocomplete="off" spellcheck="false"></label>'
+    + '<p class="aide">Ce téléphone recevra les boissons, les prix, les comptes et '
+    + 'l\'historique. Vous vous connecterez ensuite avec votre compte habituel.</p>'
+    + '<button class="btn" id="rjOk" style="margin-top:6px">Récupérer les données</button>'
+    + '<button class="lien" id="rjRetour">Retour</button>',
+  ()=>{
+    document.getElementById("rjRetour").addEventListener("click", ecranConfiguration);
+    document.getElementById("rjOk").addEventListener("click", async ()=>{
+      const url = document.getElementById("rjUrl").value.trim();
+      const cle = document.getElementById("rjCle").value.trim();
+      const bar = document.getElementById("rjBar").value.trim();
+      const phrase = document.getElementById("rjPhrase").value;
+      if (!url || !cle || !bar || !phrase){ signaler("Remplissez les quatre champs"); return; }
+
+      const bouton = document.getElementById("rjOk");
+      bouton.setAttribute("disabled",""); bouton.textContent = "Récupération…";
+      Synchro.cfg = { url, cle, bar, phrase, table:"geben_sync",
+                      auto:true, filigrane:"", envoyes:{} };
+      Synchro.cle = null;
+      try{
+        const recu = await Synchro.tirer();
+        if (!recu.lu) throw new Error("aucune donnée trouvée pour cet identifiant");
+        /* on part d'un jeu vide : fusionner avec le catalogue d'exemple créé au
+           premier lancement produirait deux fois chaque boisson */
+        D = normaliser({ etablissement: D.etablissement, theme: D.theme });
+        fusionner(recu.distant);
+        Synchro.cfg.filigrane = recu.filigrane;
+        await Synchro.sauver();
+        await Depot.ecrire(CLE, D);
+        if (!D.comptes.length) throw new Error("aucun compte reçu : vérifiez la phrase");
+        journaliser("Appareil rattaché", "données reçues du serveur");
+        appliquerTheme();
+        signaler(D.boissons.length + " boissons et " + D.comptes.length + " compte(s) reçus");
+        ecranConnexion();
+      }catch(e){
+        bouton.removeAttribute("disabled");
+        bouton.textContent = "Récupérer les données";
+        signaler("Échec : " + (e.message || "serveur injoignable"));
+      }
+    });
+  });
+}
+
+/* ---------- affichage du code de secours ---------- */
+function ecranCodeSecours(code, premiereFois){
+  afficherAcces(
+    "<h2>Code de secours</h2>"
+    + '<p class="sous">Notez-le sur papier et rangez-le ailleurs que dans le téléphone. '
+    + 'C\'est le seul moyen de retrouver les prix d\'achat si le mot de passe est oublié.</p>'
+    + '<div class="code-secours">' + ech(code) + '</div>'
+    + '<button class="btn btn-fant" id="csTel">Enregistrer le code dans un fichier</button>'
+    + '<div class="grave" style="margin-top:14px"><b>Sans ce code et sans le mot de passe</b>, '
+    + 'les prix d\'achat seront définitivement illisibles. Le reste des données — stock, ventes, '
+    + 'inventaires — resterait récupérable.</div>'
+    + '<label style="display:flex;gap:10px;align-items:flex-start;margin:14px 0">'
+    + '<input type="checkbox" id="csVu" style="width:20px;height:20px;flex:0 0 auto;margin-top:2px">'
+    + '<span style="font-size:.8125rem;line-height:1.5">J\'ai noté ce code hors du téléphone</span></label>'
+    + '<button class="btn" id="csOk" disabled>'
+    + (premiereFois ? "Commencer" : "Continuer") + '</button>',
+  ()=>{
+    document.getElementById("csTel").addEventListener("click", ()=>
+      telecharger("GEBEN-code-de-secours.txt",
+        "BAR RESTO GEBEN — code de secours administrateur\r\n\r\n" + code
+        + "\r\n\r\nCe code permet de retrouver l'accès aux prix d'achat si le mot de passe\r\n"
+        + "administrateur est oublié. Conservez-le hors du téléphone.\r\n"
+        + "Établi le " + dateLongue(aujourdhui()) + "\r\n", "text/plain"));
+    const vu = document.getElementById("csVu"), ok = document.getElementById("csOk");
+    vu.addEventListener("change", ()=> vu.checked ? ok.removeAttribute("disabled") : ok.setAttribute("disabled",""));
+    ok.addEventListener("click", lancerApplication);
+  });
+}
+
+/* ---------- connexion ---------- */
+let compteChoisi = null;
+let echecs = 0;
+
+function ecranConnexion(){
+  const actifs = D.comptes.filter(c => c.actif !== false);
+  if (!compteChoisi || !actifs.some(c => c.id === compteChoisi)){
+    compteChoisi = actifs.length === 1 ? actifs[0].id : null;
+  }
+  afficherAcces(
+    LOGO
+    + "<h2>" + ech(D.etablissement) + "</h2>"
+    + '<p class="sous">Choisissez votre compte et saisissez votre mot de passe.</p>'
+    + '<div class="comptes">'
+    + actifs.map(c =>
+        '<button class="compte-b" data-cid="'+c.id+'" aria-pressed="'+(c.id===compteChoisi)+'">'
+        + '<span class="av">'+ech(c.nom.trim().charAt(0).toUpperCase() || "?")+'</span>'
+        + '<span class="cn"><b>'+ech(c.nom)+'</b><span>'
+        + (c.role==="admin" ? "Administrateur" : "Utilisateur")
+        + ' · dernière connexion ' + horodatage(c.derniereConnexion) + '</span></span></button>').join("")
+    + '</div>'
+    + '<label><span class="lib">Mot de passe</span>'
+    + '<input id="cxMdp" type="password" autocomplete="current-password"></label>'
+    + '<button class="btn" id="cxOk" style="margin-top:12px">Se connecter</button>'
+    + '<button class="lien" id="cxOubli">Mot de passe oublié ?</button>',
+  ()=>{
+    accesCorps.querySelectorAll("[data-cid]").forEach(b =>
+      b.addEventListener("click", ()=>{ compteChoisi = b.dataset.cid; ecranConnexion(); }));
+    const champ = document.getElementById("cxMdp");
+    champ.addEventListener("keydown", e => { if (e.key === "Enter") tenterConnexion(); });
+    document.getElementById("cxOk").addEventListener("click", tenterConnexion);
+    document.getElementById("cxOubli").addEventListener("click", ecranOubli);
+    if (compteChoisi) setTimeout(()=>champ.focus(), 60);
+  });
+}
+
+async function tenterConnexion(){
+  const compte = compteDe(compteChoisi);
+  const mdp = document.getElementById("cxMdp").value;
+  if (!compte){ signaler("Choisissez votre compte"); return; }
+  if (!mdp){ signaler("Saisissez votre mot de passe"); return; }
+
+  const bouton = document.getElementById("cxOk");
+  bouton.textContent = "Vérification…"; bouton.setAttribute("disabled","");
+  const bon = await motDePasseValide(compte, mdp);
+
+  if (!bon){
+    echecs++;
+    session = null;
+    journaliser("Connexion refusée", compte.nom);
+    bouton.removeAttribute("disabled"); bouton.textContent = "Se connecter";
+    document.getElementById("cxMdp").value = "";
+    /* attente croissante : ralentit les essais en série sur un téléphone volé */
+    if (echecs >= 3){
+      const attente = Math.min(30, (echecs - 2) * 5);
+      bouton.setAttribute("disabled","");
+      let reste = attente;
+      bouton.textContent = "Patientez " + reste + " s";
+      const t = setInterval(()=>{
+        reste--;
+        if (reste <= 0){ clearInterval(t); bouton.removeAttribute("disabled");
+                         bouton.textContent = "Se connecter"; }
+        else bouton.textContent = "Patientez " + reste + " s";
+      }, 1000);
+    }
+    signaler("Mot de passe incorrect");
+    return;
+  }
+
+  echecs = 0;
+  session = { id:compte.id, nom:compte.nom, role:compte.role };
+  compte.derniereConnexion = new Date().toISOString();
+  compte.nbConnexions = (compte.nbConnexions || 0) + 1;
+
+  achats = null; cleCoffre = null;
+  if (compte.role === "admin" && D.coffre){
+    try{
+      cleCoffre = await ouvrirCoffre(mdp, false);
+      const contenu = await lireCoffre(cleCoffre);
+      achats = contenu.prixAchat || {};
+    }catch(e){
+      /* mot de passe changé sans réenfermer le coffre : cas anormal, on le dit */
+      signaler("Prix d'achat inaccessibles : utilisez le code de secours");
+    }
+  }
+  journaliser("Connexion", compte.role === "admin" ? "administrateur" : "utilisateur");
+  lancerApplication();
+  if (Synchro.cfg && Synchro.cfg.auto && Synchro.active()) Synchro.synchroniser(true);
+}
+
+function deconnexion(){
+  journaliser("Déconnexion", "");
+  session = null; cleCoffre = null; achats = null;
+  document.querySelectorAll(".vue").forEach(v => v.classList.remove("actif"));
+  fermerFeuille();
+  ecranConnexion();
+}
+
+/* ---------- mot de passe oublié ---------- */
+function ecranOubli(){
+  const compte = compteDe(compteChoisi);
+  const estLAdmin = compte && compte.role === "admin";
+  afficherAcces(
+    "<h2>Mot de passe oublié</h2>"
+    + (estLAdmin
+        ? '<p class="sous">Saisissez le code de secours remis à la création du compte. '
+          + 'Il déverrouille les prix d\'achat et vous permet de choisir un nouveau mot de passe.</p>'
+          + '<label><span class="lib">Code de secours</span>'
+          + '<input id="obCode" autocomplete="off" spellcheck="false" '
+          + 'placeholder="XXXXX-XXXXX-XXXXX-XXXXX"></label>'
+          + '<label style="margin-top:11px"><span class="lib">Nouveau mot de passe</span>'
+          + '<input id="obMdp" type="password" autocomplete="new-password"></label>'
+          + '<label style="margin-top:11px"><span class="lib">Répétez le nouveau mot de passe</span>'
+          + '<input id="obMdp2" type="password" autocomplete="new-password"></label>'
+          + '<button class="btn" id="obOk" style="margin-top:12px">Valider</button>'
+          + '<button class="lien" id="obPerdu">Je n\'ai pas le code de secours</button>'
+        : '<p class="sous">Seul l\'administrateur peut réinitialiser votre mot de passe. '
+          + 'Demandez-lui de le faire depuis l\'écran Comptes et suivi.</p>'
+          + '<p class="aide">C\'est volontaire : un utilisateur qui pourrait réinitialiser '
+          + 'son propre accès pourrait aussi contourner les restrictions.</p>')
+    + '<button class="lien" id="obRetour">Retour à la connexion</button>',
+  ()=>{
+    document.getElementById("obRetour").addEventListener("click", ecranConnexion);
+    if (!estLAdmin) return;
+    document.getElementById("obPerdu").addEventListener("click", ecranDernierRecours);
+    document.getElementById("obOk").addEventListener("click", async ()=>{
+      const code = document.getElementById("obCode").value;
+      const m1 = document.getElementById("obMdp").value;
+      const m2 = document.getElementById("obMdp2").value;
+      if (normaliserCode(code).length < 20){ signaler("Code de secours incomplet"); return; }
+      if (m1.length < 6){ signaler("Six caractères au minimum"); return; }
+      if (m1 !== m2){ signaler("Les deux mots de passe diffèrent"); return; }
+
+      const bouton = document.getElementById("obOk");
+      bouton.textContent = "Vérification…"; bouton.setAttribute("disabled","");
+      try{
+        cleCoffre = await ouvrirCoffre(code, true);
+        const contenu = await lireCoffre(cleCoffre);
+        achats = contenu.prixAchat || {};
+        await reenfermerCoffre(m1);
+        compte.sel = enB64(alea(16));
+        compte.empreinte = await empreinteDe(m1, compte.sel);
+        compte.derniereConnexion = new Date().toISOString();
+        compte.nbConnexions = (compte.nbConnexions || 0) + 1;
+        session = { id:compte.id, nom:compte.nom, role:"admin" };
+        journaliser("Récupération par code de secours", "mot de passe administrateur remplacé");
+        enregistrer();
+        signaler("Nouveau mot de passe enregistré");
+        lancerApplication();
+      }catch(e){
+        bouton.removeAttribute("disabled"); bouton.textContent = "Valider";
+        cleCoffre = null; achats = null;
+        signaler("Code de secours incorrect");
+        journaliser("Récupération refusée", "code de secours incorrect");
+      }
+    });
+  });
+}
+
+/* ---------- dernier recours : ni mot de passe ni code ---------- */
+function ecranDernierRecours(){
+  const PHRASE = "EFFACER LES PRIX";
+  afficherAcces(
+    "<h2>Dernier recours</h2>"
+    + '<p class="sous">À n\'utiliser que si le mot de passe administrateur <em>et</em> le code '
+    + 'de secours sont perdus tous les deux.</p>'
+    + '<div class="grave"><b>Ce que vous perdez :</b> tous les prix d\'achat, donc les marges '
+    + 'et les valeurs de stock au prix d\'achat. Ils sont chiffrés et personne ne peut les lire '
+    + 'sans l\'un des deux secrets.<br><br><b>Ce que vous gardez :</b> les boissons, les prix de '
+    + 'vente, les entrées, les ventes, les inventaires et les rapports.</div>'
+    + '<p class="aide">Tous les comptes seront supprimés et vous recréerez un administrateur. '
+    + 'L\'opération est inscrite dans le journal de l\'application, de façon visible.</p>'
+    + '<label><span class="lib">Pour confirmer, tapez : ' + PHRASE + '</span>'
+    + '<input id="drPhrase" autocomplete="off" spellcheck="false"></label>'
+    + '<button class="btn btn-danger" id="drOk" style="margin-top:12px">'
+    + 'Effacer les prix d\'achat et repartir</button>'
+    + '<button class="lien" id="drRetour">Annuler</button>',
+  ()=>{
+    document.getElementById("drRetour").addEventListener("click", ecranConnexion);
+    document.getElementById("drOk").addEventListener("click", ()=>{
+      if (document.getElementById("drPhrase").value.trim().toUpperCase() !== PHRASE){
+        signaler("Phrase de confirmation incorrecte"); return;
+      }
+      session = { id:null, nom:"Dernier recours", role:"admin" };
+      journaliser("DERNIER RECOURS", "prix d'achat effacés, tous les comptes supprimés");
+      Depot.ajouterInstantane(D, "avant dernier recours");
+      session = null;
+      D.coffre = null; D.comptes = []; cleCoffre = null; achats = null; achatsMigration = null;
+      enregistrer();
+      ecranConfiguration();
+    });
+  });
 }
 
 /* =====================================================================
@@ -1733,25 +3459,31 @@ function nuancier(liste, courant, attribut){
 
 function ouvrirReglages(){
   const t = D.theme || THEME_DEFAUT;
+  const admin = estAdmin();
+  const moi = session ? compteDe(session.id) : null;
+
   ouvrirFeuille(
     "<h2>Réglages</h2>"
-    + '<label><span class="lib">Nom de l\'établissement</span>'
-    + '<input id="gEtab" value="'+ech(D.etablissement)+'" maxlength="40" autocomplete="off"></label>'
-    + '<p class="aide">Ce nom apparaît en haut de l\'écran et sur tous les rapports imprimés.</p>'
+    + '<p class="aide" style="margin-top:-6px">Connecté en tant que <b>'
+    + ech(session ? session.nom : "—") + '</b> · '
+    + (admin ? "administrateur, accès complet" : "utilisateur, prix d'achat et marges masqués")
+    + '</p>'
 
     + '<hr class="rgl-sep"><p class="rgl-t">Couleur de fond</p>'
     + nuancier(FONDS, t.fond, "data-fond")
     + '<label style="margin-top:10px"><span class="lib">Ou une couleur libre</span>'
     + '<input type="color" id="gFond" value="'+t.fond+'"></label>'
-    + '<p class="aide">Les surfaces, les filets et le texte sont recalculés automatiquement '
-    + 'à partir du fond choisi, pour rester lisibles sur clair comme sur sombre.</p>'
-
-    + '<p class="rgl-t">Couleur d\'accent</p>'
+    + '<p class="rgl-t" style="margin-top:14px">Couleur d\'accent</p>'
     + nuancier(ACCENTS, t.accent, "data-accent")
     + '<label style="margin-top:10px"><span class="lib">Ou une couleur libre</span>'
     + '<input type="color" id="gAccent" value="'+t.accent+'"></label>'
-    + '<p class="aide">L\'accent sert aux montants, aux boutons et à l\'onglet actif.</p>'
     + '<button class="btn btn-fant" id="gReset">Revenir au thème d\'origine</button>'
+
+    + (admin
+        ? '<hr class="rgl-sep"><p class="rgl-t">Établissement</p>'
+          + '<label><span class="lib">Nom affiché et imprimé</span>'
+          + '<input id="gEtab" value="'+ech(D.etablissement)+'" maxlength="40" autocomplete="off"></label>'
+        : '')
 
     + '<hr class="rgl-sep"><p class="rgl-t">Installation</p>'
     + (estInstallee()
@@ -1765,21 +3497,37 @@ function ouvrirReglages(){
             + '« Installer l\'application » ou « Ajouter à l\'écran d\'accueil ». Si l\'option '
             + 'n\'apparaît pas, c\'est que la page n\'est pas ouverte depuis une adresse en https.</p>')
 
-    + '<hr class="rgl-sep"><p class="rgl-t">Sauvegarde des données</p>'
-    + '<p class="aide" style="margin-top:0">Les données sont uniquement sur ce téléphone. '
-    + 'Créez une sauvegarde chaque semaine et envoyez-la sur WhatsApp.</p>'
-    + '<button class="btn btn-fant" id="gOut">Créer une sauvegarde</button>'
-    + '<button class="btn btn-fant" id="gIn">Restaurer une sauvegarde</button>'
-    + '<button class="btn btn-danger" id="gRaz">Effacer toutes les données</button>'
-    + '<p class="aide" style="margin:12px 0 0">'+D.boissons.length+' boissons · '
-    + D.receptions.length+' réceptions · '+D.journees.length+' journées de vente · '
-    + D.inventaires.length+' inventaires · mise en service le '+dateCourte(D.dateDepart)+'</p>'
+    + '<hr class="rgl-sep"><p class="rgl-t">Mon compte</p>'
+    + '<button class="btn btn-fant" id="gMdp">Changer mon mot de passe</button>'
+    + (admin ? '<button class="btn btn-fant" id="gComptes">Comptes et suivi des connexions</button>' : '')
+    + '<button class="btn btn-fant" id="gSortie">Se déconnecter</button>'
+
+    + (admin
+        ? '<hr class="rgl-sep"><p class="rgl-t">Base de données</p>'
+          + '<div id="gBase"><p class="aide" style="margin-top:0">Lecture…</p></div>'
+          + '<button class="btn btn-fant" id="gInstantanes">Historique local et retour en arrière</button>'
+          + '<button class="btn btn-fant" id="gSynchro">Synchronisation entre téléphones</button>'
+        : '')
+
+    + (admin
+        ? '<hr class="rgl-sep"><p class="rgl-t">Sauvegarde hors du téléphone</p>'
+          + '<p class="aide" style="margin-top:0">Les données sont uniquement sur ce téléphone. '
+          + 'Créez une sauvegarde chaque semaine et envoyez-la sur WhatsApp. Les prix d\'achat y '
+          + 'restent chiffrés : le fichier ne les révèle pas.</p>'
+          + '<button class="btn btn-fant" id="gOut">Créer une sauvegarde</button>'
+          + '<button class="btn btn-fant" id="gIn">Restaurer une sauvegarde</button>'
+          + '<button class="btn btn-danger" id="gRaz">Effacer toutes les données</button>'
+          + '<p class="aide" style="margin:12px 0 0">'+D.boissons.length+' boissons · '
+          + D.receptions.length+' réceptions · '+D.saisies.length+' saisies de vente · '
+          + D.inventaires.length+' comptages · mise en service le '+dateCourte(D.dateDepart)+'</p>'
+        : '')
     + '<button class="btn btn-fant" id="gFin" style="margin-top:14px">Fermer</button>',
   ()=>{
     /* cle : "fond" ou "accent" ; attribut : "data-fond" ou "data-accent" */
     function poser(cle, attribut, val){
       D.theme = Object.assign({}, D.theme || THEME_DEFAUT);
       D.theme[cle] = val;
+      D.meta.reglages = maintenant();
       appliquerTheme(); enregistrer();
       fContenu.querySelectorAll("["+attribut+"]").forEach(c=>
         c.setAttribute("aria-pressed",
@@ -1787,15 +3535,13 @@ function ouvrirReglages(){
     }
     fContenu.querySelectorAll("[data-fond]").forEach(c=>
       c.addEventListener("click", ()=>{
-        const v = c.dataset.fond;
-        poser("fond", "data-fond", v);
-        document.getElementById("gFond").value = v;
+        poser("fond", "data-fond", c.dataset.fond);
+        document.getElementById("gFond").value = c.dataset.fond;
       }));
     fContenu.querySelectorAll("[data-accent]").forEach(c=>
       c.addEventListener("click", ()=>{
-        const v = c.dataset.accent;
-        poser("accent", "data-accent", v);
-        document.getElementById("gAccent").value = v;
+        poser("accent", "data-accent", c.dataset.accent);
+        document.getElementById("gAccent").value = c.dataset.accent;
       }));
     document.getElementById("gFond").addEventListener("input", e=>
       poser("fond", "data-fond", e.target.value));
@@ -1806,19 +3552,80 @@ function ouvrirReglages(){
       appliquerTheme(); enregistrer(); ouvrirReglages(); signaler("Thème d'origine rétabli");
     });
 
-    document.getElementById("gEtab").addEventListener("change", e=>{
+    const ge = document.getElementById("gEtab");
+    if (ge) ge.addEventListener("change", e=>{
       D.etablissement = e.target.value.trim() || "BAR RESTO GEBEN";
+      D.meta.reglages = maintenant();
       enregistrer(); majEntete();
     });
 
     const gi = document.getElementById("gInstall");
     if (gi) gi.addEventListener("click", async ()=>{ await lancerInstallation(); fermerFeuille(); });
-    document.getElementById("gOut").addEventListener("click", creerSauvegarde);
-    document.getElementById("gIn").addEventListener("click", restaurerSauvegarde);
-    document.getElementById("gRaz").addEventListener("click", effacerTout);
+
+    document.getElementById("gMdp").addEventListener("click", changerMonMotDePasse);
+    const gc = document.getElementById("gComptes");
+    if (gc) gc.addEventListener("click", ()=>{ fermerFeuille(); aller("admin"); });
+    document.getElementById("gSortie").addEventListener("click", ()=>{
+      if (confirm("Se déconnecter ?")) deconnexion();
+    });
+
+    const gb = document.getElementById("gInstantanes");
+    if (gb) gb.addEventListener("click", ouvrirInstantanes);
+    const gs = document.getElementById("gSynchro");
+    if (gs) gs.addEventListener("click", ouvrirSynchro);
+    if (admin) remplirEtatBase();
+
+    const go = document.getElementById("gOut");
+    if (go) go.addEventListener("click", creerSauvegarde);
+    const gn = document.getElementById("gIn");
+    if (gn) gn.addEventListener("click", restaurerSauvegarde);
+    const gr = document.getElementById("gRaz");
+    if (gr) gr.addEventListener("click", effacerTout);
+
     document.getElementById("gFin").addEventListener("click", fermerFeuille);
   });
 }
+async function remplirEtatBase(){
+  const zone = document.getElementById("gBase");
+  if (!zone) return;
+  const liste = await Depot.instantanes();
+  const place = await placeOccupee();
+  if (!document.getElementById("gBase")) return;
+  const durable = stockageDurable === true;
+  zone.innerHTML =
+    '<div class="stat"><span>Moteur</span><b style="font-size:.875rem">'+ech(Depot.moteur)+'</b></div>'
+    + '<div class="stat"><span>Protégé de l\'effacement automatique</span>'
+    + '<b style="font-size:.875rem;color:'+(durable?"var(--vert)":"var(--rouge)")+'">'
+    + (durable ? "oui" : "non") + '</b></div>'
+    + '<div class="stat"><span>Copies locales</span><b>'+liste.length+'</b></div>'
+    + (place ? '<div class="stat"><span>Espace utilisé</span><b style="font-size:.875rem">'
+        + poids(place.utilise)+'</b></div>' : '')
+    + '<div class="stat"><span>Synchronisation</span><b style="font-size:.875rem">'
+    + (Synchro.active()
+        ? (Synchro.dernier && !Synchro.dernier.erreur
+            ? "à jour " + horodatage(Synchro.dernier.le).slice(0,14)
+            : Synchro.dernier ? "en échec" : "configurée")
+        : "inactive") + '</b></div>'
+    + '<div class="stat"><span>Dernière sauvegarde envoyée</span>'
+    + '<b style="font-size:.875rem'+(joursDepuisSauvegarde()>7?';color:var(--rouge)':'')+'">'
+    + (D.derniereSauvegarde ? horodatage(D.derniereSauvegarde) : "jamais") + '</b></div>'
+    + (durable ? '' : '<button class="btn btn-fant" id="gDurable" style="margin-top:10px">'
+        + 'Demander la protection du stockage</button>');
+  const bd = document.getElementById("gDurable");
+  if (bd) bd.addEventListener("click", async ()=>{
+    const r = await demanderDurabilite();
+    signaler(r === true ? "Stockage protégé"
+      : r === false ? "Refusé : installez l'application sur l'écran d'accueil"
+      : "Non pris en charge par ce navigateur");
+    remplirEtatBase();
+  });
+}
+
+function joursDepuisSauvegarde(){
+  if (!D.derniereSauvegarde) return 9999;
+  return Math.floor((Date.now() - new Date(D.derniereSauvegarde).getTime()) / 86400000);
+}
+
 document.getElementById("btnReglages").addEventListener("click", ouvrirReglages);
 
 /* =====================================================================
@@ -1841,23 +3648,79 @@ function normaliser(d){
       fond: (d.theme && d.theme.fond) || THEME_DEFAUT.fond,
       accent: (d.theme && d.theme.accent) || THEME_DEFAUT.accent
     },
+    comptes: (Array.isArray(d.comptes) ? d.comptes : []).map(c =>
+               Object.assign({ maj: c.maj || c.creeLe || maintenant() }, c)),
+    supprimes: Array.isArray(d.supprimes) ? d.supprimes : [],
+    /* Origine des temps par défaut : un réglage jamais touché sur ce téléphone
+       ne doit pas l'emporter sur celui d'un autre appareil. Sans cela, un
+       téléphone qui vient de se rattacher rejetterait tous les réglages reçus,
+       ses propres horodatages étant forcément plus récents. */
+    meta: {
+      reglages: (d.meta && d.meta.reglages) || ORIGINE_DES_TEMPS,
+      coffre:   (d.meta && d.meta.coffre)   || ORIGINE_DES_TEMPS,
+      verrou:   (d.meta && d.meta.verrou)   || ORIGINE_DES_TEMPS
+    },
+    coffre: d.coffre || null,
+    verrou: d.verrou || null,
+    journal: Array.isArray(d.journal) ? d.journal : [],
     dateDepart: d.dateDepart || aujourdhui(),
-    boissons: (d.boissons||[]).map(b=>({
-      id: b.id || ("b"+Math.random().toString(36).slice(2,9)),
-      nom: b.nom || "",
-      marque: b.marque || "", format: b.format || "",
-      prixAchat: Math.max(0, Math.round(+b.prixAchat||0)),
-      prixVente: Math.max(0, Math.round(+b.prixVente||0)),
-      stockInitial: Math.max(0, Math.round(+(b.stockInitial!=null?b.stockInitial:b.stock)||0)),
-      seuil: Math.max(0, Math.round(+b.seuil||0))
-    })),
-    receptions: d.receptions || [],
-    journees: d.journees || [],
-    inventaires: d.inventaires || [],
+    boissons: [],
+    receptions: (d.receptions || []).map(r => Object.assign({ maj: r.maj || maintenant() }, r)),
+    saisies: [],
+    inventaires: (d.inventaires || []).map(i => Object.assign({ maj: i.maj || maintenant() }, i)),
     comptage: d.comptage || null,
+    derniereSauvegarde: d.derniereSauvegarde || null,
     compteur: d.compteur || 1
   };
-  n.journees.sort((a,b)=>a.date.localeCompare(b.date));
+
+  /* Reprise d'une version antérieure aux comptes : les prix d'achat quittent
+     les fiches pour rejoindre le coffre dès que l'administrateur est créé. */
+  const aReprendre = {};
+  let quelqueChoseAReprendre = false;
+
+  (d.boissons || []).forEach(b => {
+    const fiche = {
+      id: b.id || ("b" + Math.random().toString(36).slice(2,9)),
+      nom: b.nom || "",
+      marque: b.marque || "", format: b.format || "",
+      prixVente: Math.max(0, Math.round(+b.prixVente || 0)),
+      stockInitial: Math.max(0, Math.round(+(b.stockInitial != null ? b.stockInitial : b.stock) || 0)),
+      seuil: Math.max(0, Math.round(+b.seuil || 0)),
+      maj: b.maj || maintenant()
+    };
+    if (!n.coffre && b.prixAchat){
+      aReprendre[fiche.id] = Math.max(0, Math.round(+b.prixAchat));
+      quelqueChoseAReprendre = true;
+    }
+    n.boissons.push(fiche);
+  });
+  if (quelqueChoseAReprendre) achatsMigration = aReprendre;
+
+  /* Saisies de vente : reprise du modèle précédent, qui ne gardait qu'une
+     fiche par journée. Chacune devient un lot attribué à l'appareil d'origine. */
+  if (Array.isArray(d.saisies) && d.saisies.length){
+    n.saisies = d.saisies.map(x => ({
+      id: x.id || ("s" + Math.random().toString(36).slice(2,9)),
+      date: x.date, appareil: x.appareil || "reprise",
+      compteId: x.compteId || null, nom: x.nom || "—",
+      lignes: x.lignes || [], le: x.le || maintenant(), maj: x.maj || maintenant()
+    }));
+  } else {
+    n.saisies = (d.journees || []).map(j => ({
+      id: "s" + String(j.date).replace(/-/g,"") + "reprise",
+      date: j.date, appareil: "reprise", compteId: null, nom: "reprise",
+      lignes: j.lignes || [], le: maintenant(), maj: maintenant()
+    }));
+  }
+
+  /* Les prix d'achat historiques sont retirés des mouvements : les laisser en
+     clair dans les lignes de vente reviendrait à publier ce que le coffre
+     protège, y compris dans un fichier de sauvegarde. */
+  n.receptions.forEach(r => (r.lignes || []).forEach(l => { delete l.pa; }));
+  n.saisies.forEach(x => (x.lignes || []).forEach(l => { delete l.pa; }));
+  n.inventaires.forEach(i => (i.lignes || []).forEach(l => { delete l.pa; }));
+
+  n.saisies.sort((a,b)=>a.date.localeCompare(b.date));
   n.inventaires.sort((a,b)=>a.date.localeCompare(b.date));
   return n;
 }
@@ -1884,6 +3747,7 @@ function migrerV1(v1){
     boissons: v1.boissons,
     receptions: [...recs.values()],
     journees: [...jours.values()],
+    saisies: [],
     inventaires: (v1.inventaires||[]).map(inv=>({
       id: inv.id, date: inv.date, refLibelle: "origine",
       lignes: (inv.lignes||[]).map(l=>({
@@ -1905,7 +3769,7 @@ async function demarrer(){
     if (v1 && Array.isArray(v1.boissons) && v1.boissons.length
         && ((v1.ventes||[]).length || (v1.entrees||[]).length)){
       D = migrerV1(v1);
-      setTimeout(()=>signaler("Données de la version précédente reprises"), 900);
+      messageAccueil = "Données de la version précédente reprises";
     } else {
       D = normaliser({
         dateDepart: aujourdhui(),
@@ -1913,14 +3777,20 @@ async function demarrer(){
           id:"b"+(i+1), nom, prixAchat:0, prixVente:0, stockInitial:0, seuil:0
         }))
       });
-      setTimeout(()=>signaler(CATALOGUE_GEBEN.length+" boissons chargées — fixez les prix pour commencer"), 900);
+      /* création locale véritable : elle doit primer sur un jeu distant vide */
+      D.meta.reglages = maintenant();
+      /* annoncé au démarrage réel de l'application, et non par un minuteur qui
+         viendrait écraser un message plus important resté à l'écran */
+      messageAccueil = CATALOGUE_GEBEN.length + " boissons chargées — fixez les prix pour commencer";
     }
     enregistrer();
   }
+  preparerAppareil();
+  await Synchro.charger();
   appliquerTheme();
-  chargerJournee(dateVentes);
-  majEntete();
-  aller("boissons");
+  demanderDurabilite();
+  if (!D.comptes.length) ecranConfiguration();
+  else ecranConnexion();
 }
 demarrer();
 </script>
