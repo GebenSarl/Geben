@@ -1,0 +1,1928 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#16231F">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>GEBEN — Stock boissons</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icone-apple-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icone-192.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2316231F'/><text x='16' y='22' font-family='sans-serif' font-size='15' font-weight='700' fill='%23E8A33D' text-anchor='middle'>G</text></svg>">
+<style>
+:root{
+  /* Valeurs de repli : la palette réelle est calculée en JS à partir de
+     la couleur de fond choisie par l'utilisateur. */
+  --fond:#16231F; --surface:#1E2F29; --filet:#2F4640;
+  --texte:#F2EDE3; --muet:#8A9A94; --accent:#E8A33D;
+  --sur-accent:#1A1206; --rouge:#C9503E; --vert:#6FA86B;
+  --sans:system-ui,-apple-system,"Roboto","Segoe UI",sans-serif;
+  --pad:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{background:var(--fond);color:var(--texte);font-family:var(--sans);
+  font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;overscroll-behavior-y:contain}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+input,select{-webkit-appearance:none;appearance:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+
+#app{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+header{position:sticky;top:0;z-index:20;background:var(--fond);
+  border-bottom:1px solid var(--filet);
+  padding:calc(env(safe-area-inset-top) + 10px) var(--pad) 11px}
+.hdr-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.etab{margin:0;font-size:.8125rem;font-weight:700;letter-spacing:.17em;
+  text-transform:uppercase;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icone{flex:0 0 auto;width:33px;height:33px;border-radius:9px;
+  border:1px solid var(--filet);display:grid;place-items:center;color:var(--muet)}
+.icone svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round}
+.hdr-b{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:7px}
+.hdr-b .lbl{font-size:.75rem;color:var(--muet);padding-bottom:3px}
+.hdr-b b{font-size:1.5rem;font-weight:700;color:var(--accent);
+  letter-spacing:-.025em;line-height:1}
+main{flex:1;padding-bottom:92px}
+main.avec-barre{padding-bottom:172px}
+.vue{display:none}
+.vue.actif{display:block}
+
+.titre{padding:16px var(--pad) 7px;font-size:.8125rem;color:var(--muet);
+  display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.titre b{color:var(--texte);font-size:1.0625rem;font-weight:600;letter-spacing:-.01em}
+.titre b.argent{color:var(--accent)}
+
+/* onglets secondaires */
+.segments{display:flex;gap:6px;padding:4px var(--pad) 10px;-webkit-user-select:none;user-select:none}
+.segments button{flex:1;padding:8px 2px;border:1px solid var(--filet);border-radius:9px;
+  font-size:.75rem;color:var(--muet);text-align:center;transition:color .15s,border-color .15s}
+.segments button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:650}
+
+/* champs */
+label{display:block}
+.lib{display:block;font-size:.8125rem;color:var(--muet);margin-bottom:4px}
+input,select{width:100%;padding:12px 13px;background:var(--fond);
+  border:1px solid var(--filet);border-radius:9px;font-size:.9375rem}
+/* la flèche est régénérée en JS avec la couleur du thème */
+select{background-image:var(--fleche);background-repeat:no-repeat;
+  background-position:right 12px center;background-size:11px;padding-right:34px}
+input:focus,select:focus{border-color:var(--accent);outline:none}
+.champs{padding:0 var(--pad) 12px;display:grid;gap:10px}
+.champs.deux{grid-template-columns:1fr 1fr}
+.recherche{position:relative}
+.recherche input{padding-left:34px}
+.recherche svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);
+  width:15px;height:15px;fill:none;stroke:var(--muet);stroke-width:2}
+
+/* lignes */
+.liste{border-top:1px solid var(--filet)}
+.ligne{display:flex;align-items:center;gap:12px;padding:12px var(--pad);
+  border-bottom:1px solid var(--filet);width:100%;text-align:left}
+.corps{flex:1;min-width:0}
+.nom{font-weight:600;font-size:1rem;letter-spacing:-.005em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta{font-size:.75rem;color:var(--muet);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chiffre{flex:0 0 auto;text-align:right;min-width:58px}
+.chiffre .q{font-size:1.625rem;font-weight:700;line-height:1;letter-spacing:-.03em}
+.chiffre .u{font-size:.6875rem;color:var(--muet);display:block;margin-top:2px}
+.negatif .q,.rupture .q{color:var(--rouge)}
+.alerte .q{color:var(--accent)}
+.neutre .q{color:var(--muet);font-weight:500;font-size:1.125rem}
+.vide{padding:40px var(--pad);color:var(--muet);text-align:center;font-size:.9375rem;line-height:1.55}
+.vide b{display:block;color:var(--texte);font-weight:650;margin-bottom:6px;font-size:1.0625rem}
+
+/* grille de saisie */
+.gr{display:grid;grid-template-columns:1fr 58px;gap:10px;align-items:center;
+  padding:9px var(--pad);border-bottom:1px solid var(--filet)}
+.gr.trois{grid-template-columns:1fr 58px 58px}
+.gr input{padding:8px 4px;text-align:center;font-size:.9375rem}
+.gr-nom{min-width:0}
+.gr-nom span{display:block;font-size:.9375rem;font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gr-nom small{display:block;font-size:.75rem;color:var(--muet)}
+.gr-nom small.manque{color:var(--rouge)}
+.gr-mt{font-size:.875rem;color:var(--accent);text-align:right;min-width:62px}
+.gr-entete{display:grid;gap:10px;padding:8px var(--pad);font-size:.6875rem;
+  color:var(--muet);border-bottom:1px solid var(--filet);text-align:center}
+.gr-entete span:first-child{text-align:left}
+
+/* comptage inventaire */
+.cpt{padding:9px var(--pad);border-bottom:1px solid var(--filet)}
+.cpt-h{display:grid;grid-template-columns:1fr 58px;gap:10px;align-items:center}
+.cpt-h span{font-size:.9375rem;font-weight:500;min-width:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cpt-h input{padding:8px 4px;text-align:center}
+.cpt-d{display:flex;justify-content:space-between;gap:8px;margin-top:5px;font-size:.75rem}
+.cpt-calc{color:var(--muet);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cpt-ec{flex:0 0 auto;font-weight:700;font-size:.8125rem}
+.ec-plus{color:var(--vert)} .ec-moins{color:var(--rouge)} .ec-nul{color:var(--muet)}
+
+/* boutons */
+.zone{padding:14px var(--pad) 6px}
+.btn{display:block;width:100%;padding:14px 16px;border-radius:11px;
+  background:var(--accent);color:var(--sur-accent);font-weight:650;font-size:.9375rem;
+  text-align:center;letter-spacing:-.01em}
+.btn:active{transform:scale(.985)}
+.btn-fant{background:transparent;border:1px solid var(--filet);color:var(--texte);font-weight:500}
+.btn-danger{background:transparent;border:1px solid var(--rouge);color:var(--rouge);font-weight:500}
+.btn+.btn{margin-top:9px}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.paire{display:flex;gap:9px}
+.paire .btn{margin-top:0}
+.sup{flex:0 0 auto;width:32px;height:32px;border-radius:8px;border:1px solid var(--filet);
+  color:var(--muet);display:grid;place-items:center;font-size:1rem;line-height:1}
+
+nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:grid;
+  grid-template-columns:repeat(5,1fr);background:var(--surface);
+  border-top:1px solid var(--filet);padding-bottom:env(safe-area-inset-bottom)}
+nav button{position:relative;padding:9px 2px 7px;-webkit-user-select:none;user-select:none;display:flex;flex-direction:column;
+  align-items:center;gap:3px;color:var(--muet);font-size:.625rem;transition:color .15s}
+nav button[aria-current="page"]::before{content:"";position:absolute;top:0;left:50%;
+  transform:translateX(-50%);width:20px;height:2px;background:var(--accent);border-radius:0 0 2px 2px}
+nav button svg{width:20px;height:20px;fill:none;stroke:currentColor;
+  stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+nav button[aria-current="page"]{color:var(--accent)}
+
+.voile{position:fixed;inset:0;z-index:40;background:rgba(8,16,13,.72);
+  opacity:0;pointer-events:none;transition:opacity .2s}
+.voile.ouvert{opacity:1;pointer-events:auto}
+.feuille{position:fixed;left:0;right:0;bottom:0;z-index:41;background:var(--surface);
+  border-top:1px solid var(--filet);border-radius:17px 17px 0 0;
+  padding:7px var(--pad) calc(env(safe-area-inset-bottom) + 18px);
+  max-height:92dvh;overflow-y:auto;transform:translateY(102%);
+  transition:transform .24s cubic-bezier(.32,.72,0,1)}
+.feuille.ouvert{transform:translateY(0)}
+@media (prefers-reduced-motion:reduce){
+  .feuille,.voile,.segments button,nav button,.btn{transition:none}
+  .btn:active{transform:none}
+}
+.poignee{width:36px;height:4px;background:var(--filet);border-radius:3px;margin:6px auto 13px}
+.feuille h2{margin:0 0 14px;font-size:1.0625rem;font-weight:650;letter-spacing:-.015em}
+.feuille label{margin-bottom:11px}
+.feuille .deux{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.aide{font-size:.75rem;color:var(--muet);margin:-2px 0 12px;line-height:1.55}
+.aide b{color:var(--accent);font-weight:600}
+
+.bandeau+.bandeau{margin-top:8px}
+.bandeau{margin:10px var(--pad) 0;padding:12px 13px;border:1px solid var(--accent);
+  border-radius:10px;font-size:.8125rem;color:var(--texte);display:flex;
+  align-items:center;gap:10px;line-height:1.4}
+.bandeau b{color:var(--accent)}
+.bandeau button{flex:0 0 auto;color:var(--accent);font-weight:650;font-size:.8125rem;
+  border:1px solid var(--accent);border-radius:7px;padding:5px 9px}
+
+.bloc{margin:0 var(--pad) 18px;border:1px solid var(--filet);border-radius:13px;overflow:hidden}
+.bloc h3{margin:0;padding:13px 14px 12px;font-size:.9375rem;font-weight:600;
+  border-bottom:1px solid var(--filet)}
+.bloc-corps{padding:12px 13px}
+.stat{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:6px 0}
+.stat+.stat{border-top:1px solid var(--filet)}
+.stat span{color:var(--muet);font-size:.875rem}
+.stat b{font-size:1.0625rem;font-weight:650}
+.stat b.argent{color:var(--accent)}
+.stat b.mal{color:var(--rouge)}
+table{width:100%;border-collapse:collapse;font-size:.8125rem}
+th,td{padding:7px 3px;text-align:right;border-bottom:1px solid var(--filet)}
+th{color:var(--muet);font-weight:500;font-size:.6875rem}
+th:first-child,td:first-child{text-align:left}
+tbody tr:last-child td{border-bottom:0}
+tfoot td{font-weight:650;border-top:1px solid var(--filet);border-bottom:0;padding-top:9px}
+
+.toast{position:fixed;left:50%;bottom:100px;z-index:60;transform:translate(-50%,14px);
+  background:var(--texte);color:var(--fond);padding:11px 18px;border-radius:22px;
+  font-size:.875rem;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.4);
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;
+  max-width:calc(100% - 28px);text-align:center}
+.toast.ouvert{opacity:1;transform:translate(-50%,0)}
+#impression{display:none}
+
+/* barre d'action collante : le total et la validation restent accessibles
+   sans remonter les 53 lignes de la grille */
+.barre{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--surface);
+  border-top:1px solid var(--filet);display:flex;align-items:center;gap:12px;
+  padding:11px var(--pad) calc(env(safe-area-inset-bottom) + 60px)}
+.barre-info{flex:1;min-width:0}
+.barre-info .lbl{display:block;font-size:.6875rem;color:var(--muet);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.barre-info b{display:block;font-size:1.25rem;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+.barre .btn{width:auto;flex:0 0 auto;padding:12px 17px;font-size:.875rem}
+
+/* la ligne en cours de saisie se détache, utile dans une longue grille */
+.gr:focus-within,.cpt:focus-within{background:var(--surface)}
+
+/* nuanciers des réglages */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.chip{width:40px;height:40px;border-radius:11px;border:1px solid var(--filet);
+  position:relative;overflow:hidden}
+.chip[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent)}
+.chip span{position:absolute;inset:0}
+input[type="color"]{height:44px;padding:4px;cursor:pointer}
+.rgl-sep{margin:16px 0 12px;border:0;border-top:1px solid var(--filet)}
+.rgl-t{font-size:.8125rem;font-weight:650;margin:0 0 9px}
+
+@media print{
+  body{background:#fff;color:#000}
+  #app,.voile,.feuille,.toast{display:none!important}
+  #impression{display:block;font-size:11pt}
+  #impression h1{font-size:15pt;margin:0 0 2pt}
+  #impression .ent{font-size:9pt;color:#555;margin-bottom:13pt;
+    border-bottom:1px solid #000;padding-bottom:7pt}
+  #impression h2{font-size:11pt;margin:15pt 0 5pt}
+  #impression table{width:100%;border-collapse:collapse;font-size:9pt}
+  #impression th,#impression td{border-bottom:.5pt solid #999;padding:3.5pt 3pt;text-align:right}
+  #impression th:first-child,#impression td:first-child{text-align:left}
+  #impression th{border-bottom:1pt solid #000}
+  #impression tfoot td{font-weight:700;border-top:1pt solid #000;border-bottom:0}
+  #impression .res{display:flex;gap:22pt;flex-wrap:wrap;margin-bottom:5pt}
+  #impression .res b{display:block;font-size:12.5pt}
+  #impression .pied{margin-top:16pt;font-size:8pt;color:#666;
+    border-top:.5pt solid #999;padding-top:5pt}
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <div class="hdr-h">
+      <h1 class="etab" id="nomEtab">BAR RESTO GEBEN</h1>
+      <button class="icone" id="btnReglages" aria-label="Réglages">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>
+      </button>
+    </div>
+    <div class="hdr-b">
+      <span class="lbl" id="caLbl">Recette du jour</span>
+      <b class="num" id="caJour">0 F</b>
+    </div>
+  </header>
+
+  <main>
+    <section class="vue actif" id="vue-boissons">
+      <div id="zoneBandeaux"></div>
+      <div class="titre"><b>Boissons</b><span id="resBoissons"></span></div>
+      <div class="segments" id="segBoissons">
+        <button data-mode="liste" aria-pressed="true">Stock</button>
+        <button data-mode="prix" aria-pressed="false">Prix</button>
+        <button data-mode="depart" aria-pressed="false">Départ</button>
+        <button data-mode="noms" aria-pressed="false">Noms</button>
+      </div>
+      <div class="champs"><div class="recherche">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>
+        <input type="search" id="fltBoissons" placeholder="Chercher une boisson" autocomplete="off">
+      </div></div>
+      <div id="corpsBoissons"></div>
+      <div class="zone"><button class="btn" id="btnAjouter">Ajouter une boisson</button></div>
+    </section>
+
+    <section class="vue" id="vue-entrees">
+      <div class="titre"><b>Entrées de stock</b><span id="resEntrees"></span></div>
+      <div class="zone"><button class="btn" id="btnReception">Nouvelle réception</button></div>
+      <div class="liste" id="listeReceptions"></div>
+    </section>
+
+    <section class="vue" id="vue-ventes">
+      <div class="titre"><b>Ventes du jour</b><span id="resVentes"></span></div>
+      <div class="champs"><label><span class="lib">Date de la saisie</span>
+        <input type="date" id="dateVentes"></label></div>
+      <div class="champs"><div class="recherche">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>
+        <input type="search" id="fltVentes" placeholder="Chercher une boisson" autocomplete="off">
+      </div></div>
+      <div class="gr-entete" style="grid-template-columns:1fr 58px 62px">
+        <span>Boisson</span><span>Vendues</span><span>Montant</span></div>
+      <div id="grilleVentes"></div>
+      <div class="zone">
+        <button class="btn btn-fant" id="btnEffacerVentes">Effacer la saisie</button>
+      </div>
+      <div class="barre">
+        <span class="barre-info"><span class="lbl" id="totalVentesTxt">Aucune vente saisie</span>
+          <b class="num argent" id="totalVentes">0 F</b></span>
+        <button class="btn" id="btnValiderVentes">Enregistrer</button>
+      </div>
+    </section>
+
+    <section class="vue" id="vue-inventaire">
+      <div class="titre"><b>Inventaire</b><span id="resInv"></span></div>
+      <div class="champs">
+        <label><span class="lib">Partir de l'inventaire</span>
+          <select id="invReference"></select></label>
+      </div>
+      <div class="champs deux">
+        <label><span class="lib">Date du comptage</span><input type="date" id="invDate"></label>
+        <label><span class="lib">Période analysée</span><input type="text" id="invPeriode" readonly></label>
+      </div>
+      <div class="champs"><div class="recherche">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>
+        <input type="search" id="fltInv" placeholder="Chercher une boisson" autocomplete="off">
+      </div></div>
+      <div class="gr-entete" style="grid-template-columns:1fr 58px">
+        <span>Boisson · calcul du théorique</span><span>Réel</span></div>
+      <div id="grilleInv"></div>
+      <div class="zone">
+        <div id="resumeInv"></div>
+        <div class="paire">
+          <button class="btn btn-fant" id="btnCopierInv">Copier le théorique</button>
+          <button class="btn btn-fant" id="btnEffacerInv">Effacer la saisie</button>
+        </div>
+      </div>
+      <div id="histoInv"></div>
+      <div class="barre">
+        <span class="barre-info"><span class="lbl" id="barreInvTxt">Comptage non commencé</span>
+          <b class="num" id="barreInvEc">—</b></span>
+        <button class="btn" id="btnValiderInv">Valider</button>
+      </div>
+    </section>
+
+    <section class="vue" id="vue-rapports"><div id="corpsRapports"></div></section>
+  </main>
+
+  <nav>
+    <button data-vue="boissons" aria-current="page">
+      <svg viewBox="0 0 24 24"><path d="M9 3h6v4l2 4v9a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-9l2-4V3Z"/><path d="M7 13h10"/></svg>Boissons</button>
+    <button data-vue="entrees">
+      <svg viewBox="0 0 24 24"><path d="M12 4v11"/><path d="M8 11l4 4 4-4"/><path d="M4 19h16"/></svg>Entrées</button>
+    <button data-vue="ventes">
+      <svg viewBox="0 0 24 24"><path d="M4 18V9"/><path d="M10 18V5"/><path d="M16 18v-6"/><path d="M22 18H2"/></svg>Ventes</button>
+    <button data-vue="inventaire">
+      <svg viewBox="0 0 24 24"><path d="M9 4h6v3H9z"/><path d="M15 5h3v15H6V5h3"/><path d="M9 12l1.5 1.5L14 10"/></svg>Inventaire</button>
+    <button data-vue="rapports">
+      <svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>Rapports</button>
+  </nav>
+</div>
+
+<div class="voile" id="voile"></div>
+<div class="feuille" id="feuille" role="dialog" aria-modal="true">
+  <div class="poignee"></div><div id="feuilleContenu"></div>
+</div>
+<div class="toast" id="toast"></div>
+<div id="impression"></div>
+
+<script>
+"use strict";
+
+/* =====================================================================
+   MODÈLE
+   Le stock n'est jamais un compteur que l'on incrémente : il est
+   recalculé à partir du dernier inventaire connu, plus les entrées,
+   moins les ventes. C'est ce qui permet à l'inventaire de retrouver
+   exactement le même chiffre que l'écran Boissons.
+   ===================================================================== */
+const CLE = "geben_stock_v2";
+const CLE_V1 = "geben_stock_v1";
+
+const Depot = {
+  async lire(cle){
+    try{
+      if (window.storage && window.storage.get){
+        const r = await window.storage.get(cle);
+        if (r && r.value) return JSON.parse(r.value);
+      }
+    }catch(e){}
+    try{ const b = localStorage.getItem(cle); return b ? JSON.parse(b) : null; }
+    catch(e){ return null; }
+  },
+  async ecrire(cle, d){
+    const brut = JSON.stringify(d);
+    try{ if (window.storage && window.storage.set){ await window.storage.set(cle, brut); return true; } }catch(e){}
+    try{ localStorage.setItem(cle, brut); return true; }catch(e){ return false; }
+  }
+};
+
+let D = { etablissement:"BAR RESTO GEBEN", theme:null, dateDepart:null, boissons:[],
+           receptions:[], journees:[], inventaires:[], comptage:null, compteur:1 };
+
+/* ---------------------------------------------------------------------
+   THÈME
+   L'utilisateur choisit une couleur de fond ; toute la palette (surfaces,
+   filets, texte, texte secondaire) est dérivée de cette couleur pour que
+   les contrastes restent lisibles, y compris sur un fond clair.
+   --------------------------------------------------------------------- */
+const FONDS = [
+  {nom:"Ardoise", val:"#16231F"}, {nom:"Nuit",    val:"#141A2B"},
+  {nom:"Ébène",   val:"#1B1816"}, {nom:"Cacao",   val:"#241C18"},
+  {nom:"Papier",  val:"#F1EFE9"}, {nom:"Lin",     val:"#E7E2D6"},
+  {nom:"Brume",   val:"#EBEEF0"}, {nom:"Blanc",   val:"#FFFFFF"}
+];
+const ACCENTS = [
+  {nom:"Ambre",   val:"#E8A33D"}, {nom:"Cuivre",  val:"#C2703C"},
+  {nom:"Feuille", val:"#4E9A6B"}, {nom:"Lagon",   val:"#2F8CA6"},
+  {nom:"Prune",   val:"#96548C"}, {nom:"Grenade", val:"#C74A4A"}
+];
+const THEME_DEFAUT = { fond:"#16231F", accent:"#E8A33D" };
+
+function versRVB(hex){
+  const h = (hex||"").replace("#","");
+  const n = h.length===3 ? h.split("").map(c=>c+c).join("") : h;
+  return [parseInt(n.slice(0,2),16)||0, parseInt(n.slice(2,4),16)||0, parseInt(n.slice(4,6),16)||0];
+}
+function versHexa(r,v,b){
+  const c = x => Math.max(0,Math.min(255,Math.round(x))).toString(16).padStart(2,"0");
+  return "#"+c(r)+c(v)+c(b);
+}
+function versTSL(hex){
+  let [r,v,b] = versRVB(hex).map(x=>x/255);
+  const max=Math.max(r,v,b), min=Math.min(r,v,b), l=(max+min)/2;
+  let t=0, sa=0;
+  if (max!==min){
+    const d=max-min;
+    sa = l>0.5 ? d/(2-max-min) : d/(max+min);
+    if (max===r) t=(v-b)/d + (v<b?6:0);
+    else if (max===v) t=(b-r)/d + 2;
+    else t=(r-v)/d + 4;
+    t*=60;
+  }
+  return {t, s:sa*100, l:l*100};
+}
+function deTSL(t,sa,l){
+  t=((t%360)+360)%360; sa=Math.max(0,Math.min(100,sa))/100; l=Math.max(0,Math.min(100,l))/100;
+  const c=(1-Math.abs(2*l-1))*sa, x=c*(1-Math.abs(((t/60)%2)-1)), m=l-c/2;
+  let r,v,b;
+  if (t<60){r=c;v=x;b=0} else if (t<120){r=x;v=c;b=0} else if (t<180){r=0;v=c;b=x}
+  else if (t<240){r=0;v=x;b=c} else if (t<300){r=x;v=0;b=c} else {r=c;v=0;b=x}
+  return versHexa((r+m)*255,(v+m)*255,(b+m)*255);
+}
+/* luminance relative, pour décider du sens des contrastes */
+function clarte(hex){
+  const [r,v,b] = versRVB(hex).map(x=>{ const c=x/255; return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4); });
+  return 0.2126*r + 0.7152*v + 0.0722*b;
+}
+function contraste(a, b){
+  const x = clarte(a), y = clarte(b);
+  return (Math.max(x,y) + 0.05) / (Math.min(x,y) + 0.05);
+}
+/* Cherche, dans une teinte donnée, la clarté la moins extrême qui atteint le
+   contraste visé sur le fond. Dériver les couleurs à clarté fixe ne marche pas :
+   sur un fond très saturé, un gris « clair » peut être moins contrasté que le
+   fond lui-même. On part du fond et on s'en éloigne jusqu'à atteindre la cible.
+   0,179 est le point d'équilibre entre texte noir et texte blanc : en dessous,
+   c'est en s'éclaircissant qu'on gagne du contraste, au-dessus c'est l'inverse. */
+function versContraste(teinte, saturation, fond, cible){
+  const monter = clarte(fond) < 0.179;
+  let l = versTSL(fond).l;
+  for (let i = 0; i <= 100; i++){
+    const c = deTSL(teinte, saturation, l);
+    if (contraste(c, fond) >= cible) return c;
+    l = monter ? l + 1 : l - 1;
+    if (l < 0 || l > 100) break;
+  }
+  return monter ? "#FFFFFF" : "#000000";
+}
+function appliquerTheme(){
+  const t = D.theme || THEME_DEFAUT;
+  const fond = t.fond || THEME_DEFAUT.fond;
+  const accent = t.accent || THEME_DEFAUT.accent;
+  const h = versTSL(fond);
+  const clair = clarte(fond) > 0.179;
+
+  /* les surfaces restent proches du fond : ce sont des reliefs, pas des contrastes */
+  const surface = clair ? deTSL(h.t, h.s*0.55, h.l - 4) : deTSL(h.t, h.s, h.l + 5);
+
+  /* le texte garde une dérivation franche, avec un plancher de contraste */
+  const satTexte = Math.min(clair ? 22 : 18, clair ? h.s + 8 : h.s*0.35 + 4);
+  const essai = deTSL(h.t, satTexte, clair ? 14 : 93);
+  const texte = contraste(essai, fond) >= 7 ? essai
+              : versContraste(h.t, satTexte, fond, 7);
+
+  const muet  = versContraste(h.t, Math.max(6, h.s*0.5), fond, 4.5);
+  const filet = versContraste(h.t, Math.max(4, h.s*0.6), fond, 1.45);
+  const rouge = versContraste(10, 62, fond, 4.5);
+  const vert  = versContraste(142, 42, fond, 4.5);
+
+  const r = document.documentElement.style;
+  r.setProperty("--fond", fond);
+  r.setProperty("--surface", surface);
+  r.setProperty("--filet", filet);
+  r.setProperty("--texte", texte);
+  r.setProperty("--muet", muet);
+  r.setProperty("--accent", accent);
+  /* sur un aplat de couleur, on retient celui des deux extrêmes qui contraste
+     le plus : ce choix garantit mathématiquement au moins 4,5 quelle que soit
+     la couleur d'accent choisie */
+  r.setProperty("--sur-accent",
+    contraste("#181206", accent) >= contraste("#FFFFFF", accent) ? "#181206" : "#FFFFFF");
+  r.setProperty("--rouge", rouge);
+  r.setProperty("--vert", vert);
+
+  /* flèche des listes déroulantes redessinée dans la couleur du thème */
+  r.setProperty("--fleche", "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'"
+    + " viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='"
+    + encodeURIComponent(muet) + "' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E\")");
+  /* sans cela, le sélecteur de date et les claviers natifs d'Android restent
+     clairs sur un fond sombre, et inversement */
+  document.documentElement.style.colorScheme = clair ? "light" : "dark";
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", fond);
+}
+let cacheStocks = null;
+let minuteurSauve = null;
+
+function enregistrer(){
+  cacheStocks = null;
+  clearTimeout(minuteurSauve);
+  minuteurSauve = setTimeout(async ()=>{
+    if (!await Depot.ecrire(CLE, D)) signaler("Enregistrement impossible sur cet appareil");
+  }, 200);
+}
+function id(){ return "x" + (D.compteur++) + Date.now().toString(36); }
+
+/* ---------------- outils ---------------- */
+const aujourdhui = () => new Date().toLocaleDateString("en-CA");
+function argent(n){ return Math.round(n||0).toLocaleString("fr-FR").replace(/\u202f|\u00a0/g," ") + " F"; }
+function nombre(n){ return (n==null?0:n).toLocaleString("fr-FR").replace(/\u202f|\u00a0/g," "); }
+function dateCourte(iso){ if(!iso) return ""; const p=iso.split("-"); return p[2]+"/"+p[1]+"/"+p[0].slice(2); }
+function dateLongue(iso){
+  if(!iso) return "";
+  return new Date(iso+"T12:00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"});
+}
+function veille(iso){
+  const d = new Date(iso+"T12:00:00"); d.setDate(d.getDate()-1);
+  return d.toLocaleDateString("en-CA");
+}
+function lendemain(iso){
+  const d = new Date(iso+"T12:00:00"); d.setDate(d.getDate()+1);
+  return d.toLocaleDateString("en-CA");
+}
+function ech(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function boisson(bid){ return D.boissons.find(b=>b.id===bid); }
+function catalogue(){ return D.boissons.slice().sort((a,b)=>a.nom.localeCompare(b.nom,"fr")); }
+function journeeDe(date){ return D.journees.find(j=>j.date===date); }
+
+let tToast;
+function signaler(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("ouvert");
+  clearTimeout(tToast); tToast = setTimeout(()=>t.classList.remove("ouvert"), 2800);
+}
+
+/* ---------------- références et stock ---------------- */
+/* Point de départ d'un calcul pour une boisson : le dernier inventaire
+   où elle a été comptée, sinon la mise en service. */
+function reference(bid, avantOuEgal){
+  for (let i=D.inventaires.length-1; i>=0; i--){
+    const inv = D.inventaires[i];
+    if (avantOuEgal && inv.date > avantOuEgal) continue;
+    const l = inv.lignes.find(x=>x.boissonId===bid);
+    if (l) return { base:l.reel, date:inv.date, libelle:"inventaire du "+dateCourte(inv.date) };
+  }
+  const b = boisson(bid);
+  return { base:(b && b.stockInitial)||0, date:D.dateDepart, depart:true, libelle:"mise en service" };
+}
+/* Un mouvement compte-t-il dans la fenêtre ? Le jour de l'inventaire de
+   référence est considéré comme clos : on part du lendemain. */
+function dansFenetre(date, ref, dateMax){
+  if (dateMax && date > dateMax) return false;
+  return ref.depart ? true : date > ref.date;
+}
+function cumulsPeriode(bid, ref, dateMax){
+  let entrees=0, ventes=0;
+  D.receptions.forEach(r=>{
+    if (!dansFenetre(r.date, ref, dateMax)) return;
+    r.lignes.forEach(l=>{ if (l.boissonId===bid) entrees += l.qte; });
+  });
+  D.journees.forEach(j=>{
+    if (!dansFenetre(j.date, ref, dateMax)) return;
+    j.lignes.forEach(l=>{ if (l.boissonId===bid) ventes += l.qte; });
+  });
+  return { entrees, ventes };
+}
+/* Stock courant de toutes les boissons, en une seule passe. */
+function stocks(){
+  if (cacheStocks) return cacheStocks;
+  const refs = new Map(), st = new Map();
+  D.boissons.forEach(b=>{ const r = reference(b.id, null); refs.set(b.id, r); st.set(b.id, r.base); });
+  D.receptions.forEach(r=> r.lignes.forEach(l=>{
+    const rf = refs.get(l.boissonId);
+    if (rf && dansFenetre(r.date, rf, null)) st.set(l.boissonId, st.get(l.boissonId) + l.qte);
+  }));
+  D.journees.forEach(j=> j.lignes.forEach(l=>{
+    const rf = refs.get(l.boissonId);
+    if (rf && dansFenetre(j.date, rf, null)) st.set(l.boissonId, st.get(l.boissonId) - l.qte);
+  }));
+  cacheStocks = st;
+  return st;
+}
+const stockDe = b => { const v = stocks().get(b.id); return v==null ? 0 : v; };
+function aDesMouvements(bid){
+  return D.receptions.some(r=>r.lignes.some(l=>l.boissonId===bid))
+      || D.journees.some(j=>j.lignes.some(l=>l.boissonId===bid));
+}
+
+/* ---------------- activité ---------------- */
+function activite(debut, fin){
+  const par = new Map();
+  const ligne = (bid, nom) => {
+    if (!par.has(bid)) par.set(bid, {bid, nom, vendues:0, recues:0, ca:0, marge:0});
+    return par.get(bid);
+  };
+  let ca=0, marge=0, vendues=0, recues=0, achats=0, jours=0;
+
+  D.journees.forEach(j=>{
+    if (j.date<debut || j.date>fin) return;
+    let vide = true;
+    j.lignes.forEach(l=>{
+      const b = boisson(l.boissonId);
+      const e = ligne(l.boissonId, b ? b.nom : (l.nom||"Boisson supprimée"));
+      const m = l.qte * (l.pu - (l.pa||0));
+      e.vendues += l.qte; e.ca += l.qte*l.pu; e.marge += m;
+      ca += l.qte*l.pu; marge += m; vendues += l.qte;
+      if (l.qte) vide = false;
+    });
+    if (!vide) jours++;
+  });
+  D.receptions.forEach(r=>{
+    if (r.date<debut || r.date>fin) return;
+    r.lignes.forEach(l=>{
+      const b = boisson(l.boissonId);
+      const e = ligne(l.boissonId, b ? b.nom : (l.nom||"Boisson supprimée"));
+      e.recues += l.qte; recues += l.qte; achats += l.qte*(l.pa||0);
+    });
+  });
+  return { debut, fin, ca, marge, vendues, recues, achats, jours,
+           lignes:[...par.values()].sort((a,b)=> b.ca-a.ca || b.vendues-a.vendues) };
+}
+function etatStock(){
+  const bs = catalogue();
+  let unites=0, va=0, vv=0;
+  const alertes=[];
+  bs.forEach(b=>{
+    const s = stockDe(b);
+    unites += s; va += s*b.prixAchat; vv += s*b.prixVente;
+    if (s <= 0 && aDesMouvements(b.id)) alertes.push(b);
+    else if (b.seuil>0 && s<=b.seuil) alertes.push(b);
+  });
+  return { lignes:bs, unites, valeurAchat:va, valeurVente:vv, alertes };
+}
+function recetteDu(date){
+  const j = journeeDe(date);
+  return j ? j.lignes.reduce((s,l)=> s + l.qte*l.pu, 0) : 0;
+}
+
+/* =====================================================================
+   FEUILLE
+   ===================================================================== */
+const feuille = document.getElementById("feuille");
+const voile = document.getElementById("voile");
+const fContenu = document.getElementById("feuilleContenu");
+function ouvrirFeuille(html, apres){
+  fContenu.innerHTML = html;
+  feuille.classList.add("ouvert"); voile.classList.add("ouvert");
+  if (apres) apres();
+}
+function fermerFeuille(){
+  feuille.classList.remove("ouvert"); voile.classList.remove("ouvert");
+  setTimeout(()=>{ if(!feuille.classList.contains("ouvert")) fContenu.innerHTML=""; }, 260);
+}
+voile.addEventListener("click", fermerFeuille);
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") fermerFeuille(); });
+
+/* =====================================================================
+   NAVIGATION
+   ===================================================================== */
+let vueActive = "boissons";
+const rendus = {
+  boissons: rendreBoissons, entrees: rendreEntrees, ventes: rendreVentes,
+  inventaire: rendreInventaire, rapports: rendreRapports
+};
+function aller(nom){
+  vueActive = nom;
+  document.querySelectorAll(".vue").forEach(v=>v.classList.remove("actif"));
+  document.getElementById("vue-"+nom).classList.add("actif");
+  document.querySelectorAll("nav button").forEach(b=>
+    b.dataset.vue===nom ? b.setAttribute("aria-current","page") : b.removeAttribute("aria-current"));
+  document.querySelector("main").classList.toggle("avec-barre",
+    nom==="ventes" || nom==="inventaire");
+  if (window.scrollTo) window.scrollTo(0,0);
+  rendus[nom]();
+}
+document.querySelectorAll("nav button").forEach(b=>
+  b.addEventListener("click", ()=>aller(b.dataset.vue)));
+function rafraichir(){ majEntete(); rendus[vueActive](); }
+function majEntete(){
+  document.getElementById("caJour").textContent = argent(recetteDu(aujourdhui()));
+  document.getElementById("nomEtab").textContent = D.etablissement || "BAR RESTO GEBEN";
+}
+
+/* filtre partagé : on masque les lignes sans re-rendre, pour ne pas
+   perdre le focus ni les valeurs déjà tapées */
+function brancherFiltre(champ, conteneur){
+  champ.addEventListener("input", ()=>{
+    const q = champ.value.trim().toLowerCase();
+    conteneur.querySelectorAll("[data-nom]").forEach(el=>{
+      el.hidden = q ? el.dataset.nom.indexOf(q) === -1 : false;
+    });
+  });
+}
+
+/* =====================================================================
+   1. BOISSONS — stock, prix, stock de départ
+   ===================================================================== */
+let modeBoissons = "liste";
+
+function rendreBoissons(){
+  const bs = catalogue();
+  const zone = document.getElementById("corpsBoissons");
+  const et = etatStock();
+
+  document.getElementById("resBoissons").textContent =
+    bs.length ? bs.length + " référence" + (bs.length>1?"s":"")
+      + (et.alertes.length ? " · " + et.alertes.length + " à surveiller" : "") : "";
+
+  const bandeaux = [];
+  if (invitationInstall && !estInstallee())
+    bandeaux.push('<div class="bandeau"><span><b>Installer l\'application</b> sur l\'écran '
+      + 'd\'accueil, pour l\'ouvrir sans passer par le navigateur.</span>'
+      + '<button id="versInstall">Installer</button></div>');
+  const sansPrix = bs.filter(b=>!b.prixVente).length;
+  if (sansPrix && modeBoissons!=="prix")
+    bandeaux.push('<div class="bandeau"><span><b>'+sansPrix+' boisson'+(sansPrix>1?'s':'')+'</b> sans prix de vente. '
+      + 'Sans prix, la recette ne peut pas être calculée.</span>'
+      + '<button id="versPrix">Fixer</button></div>');
+  document.getElementById("zoneBandeaux").innerHTML = bandeaux.join("");
+  const bInst = document.getElementById("versInstall");
+  if (bInst) bInst.addEventListener("click", lancerInstallation);
+  const bPrix = document.getElementById("versPrix");
+  if (bPrix) bPrix.addEventListener("click", ()=>{ modeBoissons="prix"; rendreBoissons(); });
+
+  document.querySelectorAll("#segBoissons button").forEach(b=>
+    b.setAttribute("aria-pressed", b.dataset.mode===modeBoissons ? "true":"false"));
+
+  if (!bs.length){
+    zone.innerHTML = '<div class="vide"><b>Le catalogue est vide</b>Ajoutez une boisson pour commencer.</div>';
+    return;
+  }
+
+  if (modeBoissons === "liste"){
+    zone.innerHTML = '<div class="liste">' + bs.map(b=>{
+      const s = stockDe(b);
+      const bouge = aDesMouvements(b.id);
+      let cls = "", u = "en stock";
+      if (s < 0){ cls="negatif"; u="incohérent"; }
+      else if (s === 0 && !bouge && !b.stockInitial){ cls="neutre"; u="à saisir"; }
+      else if (s === 0){ cls="rupture"; u="rupture"; }
+      else if (b.seuil>0 && s<=b.seuil){ cls="alerte"; u="à commander"; }
+      const meta = [b.prixVente?argent(b.prixVente):"prix à définir", b.format, b.marque]
+        .filter(Boolean).join(" · ");
+      return '<button class="ligne '+cls+'" data-nom="'+ech(b.nom.toLowerCase())+'" data-modifier="'+b.id+'">'
+        + '<span class="corps"><span class="nom">'+ech(b.nom)+'</span>'
+        + '<span class="meta">'+ech(meta)+'</span></span>'
+        + '<span class="chiffre"><span class="q num">'+nombre(s)+'</span><span class="u">'+u+'</span></span>'
+        + '</button>';
+    }).join("") + '</div>'
+    + '<div class="titre"><span>Valeur du stock au prix d\'achat</span>'
+    + '<b class="num">'+argent(et.valeurAchat)+'</b></div>';
+
+    zone.querySelectorAll("[data-modifier]").forEach(el=>
+      el.addEventListener("click", ()=>formulaireBoisson(el.dataset.modifier)));
+  }
+
+  else if (modeBoissons === "prix"){
+    zone.innerHTML =
+      '<div class="gr-entete" style="grid-template-columns:1fr 58px 58px">'
+      + '<span>Boisson</span><span>Achat</span><span>Vente</span></div>'
+      + bs.map(b=>
+          '<div class="gr trois" data-nom="'+ech(b.nom.toLowerCase())+'">'
+          + '<span class="gr-nom"><span>'+ech(b.nom)+'</span>'
+          + '<small'+(b.prixVente?'':' class="manque"')+'>'
+          + (b.prixVente ? "marge "+argent(b.prixVente-b.prixAchat) : "prix de vente à définir")
+          + '</small></span>'
+          + '<input type="number" inputmode="numeric" min="0" step="5" data-pa="'+b.id+'" '
+          + 'value="'+(b.prixAchat||"")+'" placeholder="0" aria-label="Prix d\'achat '+ech(b.nom)+'">'
+          + '<input type="number" inputmode="numeric" min="0" step="5" data-pv="'+b.id+'" '
+          + 'value="'+(b.prixVente||"")+'" placeholder="0" aria-label="Prix de vente '+ech(b.nom)+'">'
+          + '</div>').join("")
+      + '<div class="zone"><p class="aide">Les prix sont enregistrés au fur et à mesure de la saisie. '
+      + 'Ils servent de prix par défaut pour les ventes et pour la valeur du stock.</p></div>';
+
+    zone.querySelectorAll("[data-pa],[data-pv]").forEach(inp=>{
+      inp.addEventListener("change", ()=>{
+        const champ = inp.dataset.pa ? "prixAchat" : "prixVente";
+        const b = boisson(inp.dataset.pa || inp.dataset.pv);
+        if (!b) return;
+        b[champ] = Math.max(0, Math.round(+inp.value||0));
+        const pt = inp.closest(".gr").querySelector("small");
+        if (b.prixVente){ pt.textContent = "marge "+argent(b.prixVente-b.prixAchat); pt.className=""; }
+        else { pt.textContent = "prix de vente à définir"; pt.className="manque"; }
+        enregistrer();
+      });
+    });
+  }
+
+  else if (modeBoissons === "depart"){
+    zone.innerHTML =
+      '<div class="gr-entete" style="grid-template-columns:1fr 58px">'
+      + '<span>Boisson</span><span>Départ</span></div>'
+      + bs.map(b=>{
+          const r = reference(b.id, null);
+          return '<div class="gr" data-nom="'+ech(b.nom.toLowerCase())+'">'
+          + '<span class="gr-nom"><span>'+ech(b.nom)+'</span><small>'
+          + (r.depart ? "au "+dateCourte(D.dateDepart)
+                      : "figé par l'"+r.libelle+" ("+nombre(r.base)+")")
+          + '</small></span>'
+          + '<input type="number" inputmode="numeric" min="0" step="1" data-si="'+b.id+'" '
+          + 'value="'+(b.stockInitial||"")+'" placeholder="0"'+(r.depart?"":" disabled")
+          + ' aria-label="Stock de départ '+ech(b.nom)+'"></div>';
+        }).join("")
+      + '<div class="zone"><label><span class="lib">Date de mise en service</span>'
+      + '<input type="date" id="champDepart" value="'+D.dateDepart+'"></label>'
+      + '<p class="aide" style="margin-top:10px">Le stock de départ est la quantité en magasin le jour où '
+      + 'vous commencez à utiliser l\'application. Après un premier inventaire validé, c\'est le stock '
+      + 'compté qui sert de point de départ et ce champ n\'agit plus.</p></div>';
+
+    zone.querySelectorAll("[data-si]").forEach(inp=>{
+      inp.addEventListener("change", ()=>{
+        const b = boisson(inp.dataset.si); if (!b) return;
+        b.stockInitial = Math.max(0, Math.round(+inp.value||0));
+        enregistrer();
+      });
+    });
+    document.getElementById("champDepart").addEventListener("change", e=>{
+      D.dateDepart = e.target.value || aujourdhui();
+      enregistrer(); rendreBoissons();
+    });
+  }
+
+  else { /* renommer */
+    zone.innerHTML =
+      '<div class="gr-entete" style="grid-template-columns:1fr"><span>Nom de la boisson</span></div>'
+      + bs.map(b=>
+          '<div class="gr" data-nom="'+ech(b.nom.toLowerCase())+'" style="grid-template-columns:1fr">'
+          + '<input type="text" data-nm="'+b.id+'" value="'+ech(b.nom)+'" '
+          + 'autocomplete="off" spellcheck="false" aria-label="Nom de '+ech(b.nom)+'"></div>').join("")
+      + '<div class="zone"><p class="aide">Corrigez un nom et il est enregistré dès que vous quittez '
+      + 'le champ. L\'historique des ventes, des entrées et des inventaires suit automatiquement : '
+      + 'renommer ne casse rien. Deux boissons ne peuvent pas porter le même nom.</p></div>';
+
+    zone.querySelectorAll("[data-nm]").forEach(inp=>{
+      inp.addEventListener("change", ()=>{
+        const b = boisson(inp.dataset.nm); if (!b) return;
+        const nouveau = inp.value.trim();
+        if (!nouveau){ inp.value = b.nom; signaler("Le nom ne peut pas être vide"); return; }
+        if (nouveau === b.nom) return;
+        const doublon = D.boissons.find(x=> x.id!==b.id && x.nom.toLowerCase()===nouveau.toLowerCase());
+        if (doublon){ inp.value = b.nom; signaler(nouveau + " existe déjà dans le catalogue"); return; }
+        const ancien = b.nom;
+        b.nom = nouveau;
+        inp.closest(".gr").dataset.nom = nouveau.toLowerCase();
+        enregistrer();
+        signaler(ancien + " renommée en " + nouveau);
+      });
+    });
+  }
+
+  const flt = document.getElementById("fltBoissons");
+  brancherFiltre(flt, zone);
+  if (flt.value) flt.dispatchEvent(new Event("input"));
+}
+
+document.querySelectorAll("#segBoissons button").forEach(b=>
+  b.addEventListener("click", ()=>{ modeBoissons = b.dataset.mode; rendreBoissons(); }));
+
+function formulaireBoisson(bid){
+  const b = bid ? boisson(bid) : null;
+  const v = (k,d)=> (b && b[k]!=null ? b[k] : (d==null?"":d));
+  const s = b ? stockDe(b) : 0;
+  const r = b ? reference(b.id, null) : null;
+
+  ouvrirFeuille(
+    "<h2>" + (b ? ech(b.nom) : "Nouvelle boisson") + "</h2>"
+    + '<label><span class="lib">Nom</span><input id="fNom" value="'+ech(v("nom"))+'" '
+    +   'placeholder="FLAG GM" autocomplete="off"></label>'
+    + '<div class="deux">'
+    +   '<label><span class="lib">Marque (facultatif)</span><input id="fMarque" value="'+ech(v("marque"))+'" autocomplete="off"></label>'
+    +   '<label><span class="lib">Format (facultatif)</span><input id="fFormat" value="'+ech(v("format"))+'" autocomplete="off"></label>'
+    + '</div>'
+    + '<div class="deux">'
+    +   '<label><span class="lib">Prix d\'achat</span><input id="fPa" type="number" inputmode="numeric" min="0" step="5" value="'+v("prixAchat","")+'" placeholder="0"></label>'
+    +   '<label><span class="lib">Prix de vente</span><input id="fPv" type="number" inputmode="numeric" min="0" step="5" value="'+v("prixVente","")+'" placeholder="0"></label>'
+    + '</div>'
+    + '<p class="aide" id="fMarge"></p>'
+    + '<div class="deux">'
+    +   '<label><span class="lib">'+(b && r && !r.depart ? "Stock actuel (calculé)" : "Stock de départ")+'</span>'
+    +   (b && r && !r.depart
+          ? '<input value="'+nombre(s)+'" disabled>'
+          : '<input id="fSi" type="number" inputmode="numeric" min="0" step="1" value="'+v("stockInitial","")+'" placeholder="0">')+'</label>'
+    +   '<label><span class="lib">Alerte en dessous de</span><input id="fSeuil" type="number" inputmode="numeric" min="0" step="1" value="'+v("seuil","")+'" placeholder="0"></label>'
+    + '</div>'
+    + (b && r && !r.depart
+        ? '<p class="aide">Stock calculé depuis l\'' + r.libelle + ' (' + nombre(r.base) + ' comptés), '
+          + 'plus les entrées, moins les ventes. Pour le corriger, passez par l\'inventaire.</p>'
+        : '')
+    + '<button class="btn" id="fOk">'+(b?"Enregistrer":"Ajouter au catalogue")+'</button>'
+    + (b ? '<button class="btn btn-danger" id="fDel">Supprimer du catalogue</button>' : "")
+    + '<button class="btn btn-fant" id="fNon">Annuler</button>',
+  ()=>{
+    const nom=document.getElementById("fNom"), pa=document.getElementById("fPa"),
+          pv=document.getElementById("fPv"), mg=document.getElementById("fMarge");
+    function majMarge(){
+      const m = (+pv.value||0) - (+pa.value||0);
+      mg.innerHTML = (!pv.value && !pa.value) ? "" :
+        "Marge par unité : <b>"+argent(m)+"</b>" + (m<0 ? " — vous vendez à perte" : "");
+    }
+    pa.addEventListener("input", majMarge); pv.addEventListener("input", majMarge); majMarge();
+    if (!b) setTimeout(()=>nom.focus(), 280);
+    document.getElementById("fNon").addEventListener("click", fermerFeuille);
+
+    document.getElementById("fOk").addEventListener("click", ()=>{
+      const champSi = document.getElementById("fSi");
+      const d = {
+        nom: nom.value.trim(),
+        marque: document.getElementById("fMarque").value.trim(),
+        format: document.getElementById("fFormat").value.trim(),
+        prixAchat: Math.max(0, Math.round(+pa.value||0)),
+        prixVente: Math.max(0, Math.round(+pv.value||0)),
+        seuil: Math.max(0, Math.round(+document.getElementById("fSeuil").value||0))
+      };
+      if (champSi) d.stockInitial = Math.max(0, Math.round(+champSi.value||0));
+      if (!d.nom){ signaler("Indiquez le nom de la boisson"); nom.focus(); return; }
+      const doublon = D.boissons.find(x=> x.nom.toLowerCase()===d.nom.toLowerCase() && (!b || x.id!==b.id));
+      if (doublon){ signaler(d.nom + " existe déjà dans le catalogue"); return; }
+
+      if (b){ Object.assign(b, d); signaler(b.nom + " modifiée"); }
+      else { D.boissons.push(Object.assign({id:id(), stockInitial:d.stockInitial||0}, d)); signaler(d.nom + " ajoutée"); }
+      enregistrer(); fermerFeuille(); rafraichir();
+    });
+
+    if (b) document.getElementById("fDel").addEventListener("click", ()=>{
+      const n = D.receptions.reduce((s,r)=>s+r.lignes.filter(l=>l.boissonId===b.id).length,0)
+              + D.journees.reduce((s,j)=>s+j.lignes.filter(l=>l.boissonId===b.id).length,0);
+      if (!confirm(n ? b.nom+" a "+n+" mouvement(s) enregistré(s), qui resteront dans les rapports. Supprimer du catalogue ?"
+                     : "Supprimer "+b.nom+" du catalogue ?")) return;
+      D.boissons = D.boissons.filter(x=>x.id!==b.id);
+      enregistrer(); fermerFeuille(); rafraichir(); signaler(b.nom+" supprimée");
+    });
+  });
+}
+document.getElementById("btnAjouter").addEventListener("click", ()=>formulaireBoisson(null));
+
+/* =====================================================================
+   2. ENTRÉES DE STOCK — réceptions par bon de livraison
+   ===================================================================== */
+function rendreEntrees(){
+  const zone = document.getElementById("listeReceptions");
+  const rs = D.receptions.slice().sort((a,b)=> b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+  const mois = aujourdhui().slice(0,7);
+  const total = rs.filter(r=>r.date.slice(0,7)===mois)
+                  .reduce((s,r)=> s + r.lignes.reduce((x,l)=>x+l.qte,0), 0);
+  document.getElementById("resEntrees").textContent = total ? nombre(total)+" unités ce mois" : "";
+
+  if (!rs.length){
+    zone.innerHTML = '<div class="vide"><b>Aucune réception</b>'
+      + 'Enregistrez une livraison : le stock augmente pour chaque boisson reçue.</div>';
+    return;
+  }
+  zone.innerHTML = rs.map(r=>{
+    const q = r.lignes.reduce((s,l)=>s+l.qte,0);
+    const val = r.lignes.reduce((s,l)=>s+l.qte*(l.pa||0),0);
+    const meta = [r.lignes.length+" référence"+(r.lignes.length>1?"s":""),
+                  r.fournisseur, val?argent(val):""].filter(Boolean).join(" · ");
+    return '<div class="ligne">'
+      + '<button class="corps" data-ouvrir="'+r.id+'" style="text-align:left">'
+      +   '<span class="nom">'+dateLongue(r.date)+'</span><span class="meta">'+ech(meta)+'</span></button>'
+      + '<span class="chiffre"><span class="q num" style="color:var(--vert)">+'+nombre(q)+'</span>'
+      +   '<span class="u">reçues</span></span>'
+      + '<button class="sup" data-suppr="'+r.id+'" aria-label="Supprimer cette réception">&times;</button>'
+      + '</div>';
+  }).join("");
+
+  zone.querySelectorAll("[data-ouvrir]").forEach(el=>
+    el.addEventListener("click", ()=>ouvrirReception(el.dataset.ouvrir)));
+  zone.querySelectorAll("[data-suppr]").forEach(el=>
+    el.addEventListener("click", ()=>{
+      const r = D.receptions.find(x=>x.id===el.dataset.suppr); if(!r) return;
+      const q = r.lignes.reduce((s,l)=>s+l.qte,0);
+      if (!confirm("Supprimer la réception du "+dateCourte(r.date)+" ? "+q+" unité(s) seront retirées du stock.")) return;
+      D.receptions = D.receptions.filter(x=>x.id!==el.dataset.suppr);
+      enregistrer(); rafraichir(); signaler("Réception supprimée");
+    }));
+}
+
+let saisieRecep = {};
+function ouvrirReception(rid){
+  if (!D.boissons.length){ signaler("Ajoutez d'abord des boissons"); aller("boissons"); return; }
+  const r = rid ? D.receptions.find(x=>x.id===rid) : null;
+  saisieRecep = {};
+  if (r) r.lignes.forEach(l=> saisieRecep[l.boissonId] = l.qte);
+  const fournisseurs = [...new Set(D.receptions.map(x=>x.fournisseur).filter(Boolean))];
+  const bs = catalogue();
+
+  ouvrirFeuille(
+    "<h2>" + (r ? "Réception du "+dateCourte(r.date) : "Nouvelle réception") + "</h2>"
+    + '<div class="deux">'
+    +   '<label><span class="lib">Date de réception</span><input type="date" id="rDate" value="'+(r?r.date:aujourdhui())+'"></label>'
+    +   '<label><span class="lib">Fournisseur</span><input id="rFour" list="lstFour" autocomplete="off" value="'+ech(r?r.fournisseur:"")+'" placeholder="Dépôt"></label>'
+    + '</div>'
+    + '<datalist id="lstFour">'+fournisseurs.map(f=>'<option value="'+ech(f)+'">').join("")+'</datalist>'
+    + '<label><span class="lib">Chercher une boisson</span><input type="search" id="rFlt" placeholder="Nom de la boisson" autocomplete="off"></label>'
+    + '<div id="rGrille" style="margin:0 calc(var(--pad) * -1) 12px;border-top:1px solid var(--filet)">'
+    + bs.map(b=>
+        '<div class="gr" data-nom="'+ech(b.nom.toLowerCase())+'">'
+        + '<span class="gr-nom"><span>'+ech(b.nom)+'</span>'
+        + '<small>en stock '+nombre(stockDe(b))+(b.prixAchat?" · achat "+argent(b.prixAchat):"")+'</small></span>'
+        + '<input type="number" inputmode="numeric" min="0" step="1" data-q="'+b.id+'" '
+        + 'value="'+(saisieRecep[b.id]||"")+'" placeholder="0" aria-label="Quantité reçue '+ech(b.nom)+'"></div>').join("")
+    + '</div>'
+    + '<p class="aide" id="rResume"></p>'
+    + '<button class="btn" id="rOk">'+(r?"Enregistrer les modifications":"Valider la réception")+'</button>'
+    + '<button class="btn btn-fant" id="rNon">Annuler</button>',
+  ()=>{
+    const grille = document.getElementById("rGrille");
+    const resume = document.getElementById("rResume");
+    function majResume(){
+      let q=0, n=0, val=0;
+      Object.keys(saisieRecep).forEach(bid=>{
+        const v = saisieRecep[bid]; if (!v) return;
+        const b = boisson(bid); q += v; n++; val += v*((b&&b.prixAchat)||0);
+      });
+      resume.innerHTML = n
+        ? n+" référence"+(n>1?"s":"")+" · <b>"+nombre(q)+" unités</b>"+(val?" · valeur "+argent(val):"")
+        : "Saisissez les quantités reçues. Les boissons laissées vides ne sont pas concernées.";
+    }
+    grille.querySelectorAll("[data-q]").forEach(inp=>
+      inp.addEventListener("input", ()=>{
+        const v = Math.max(0, Math.round(+inp.value||0));
+        if (v) saisieRecep[inp.dataset.q] = v; else delete saisieRecep[inp.dataset.q];
+        majResume();
+      }));
+    brancherFiltre(document.getElementById("rFlt"), grille);
+    majResume();
+
+    document.getElementById("rNon").addEventListener("click", fermerFeuille);
+    document.getElementById("rOk").addEventListener("click", ()=>{
+      const date = document.getElementById("rDate").value || aujourdhui();
+      const four = document.getElementById("rFour").value.trim();
+      const lignes = Object.keys(saisieRecep).filter(bid=>saisieRecep[bid]>0).map(bid=>{
+        const b = boisson(bid);
+        return { boissonId:bid, nom:b?b.nom:"", qte:saisieRecep[bid], pa:(b&&b.prixAchat)||0 };
+      });
+      if (!lignes.length){ signaler("Aucune quantité saisie"); return; }
+      if (r){ r.date=date; r.fournisseur=four; r.lignes=lignes; }
+      else D.receptions.push({ id:id(), date, fournisseur:four, lignes });
+      enregistrer(); fermerFeuille(); rafraichir();
+      signaler(nombre(lignes.reduce((s,l)=>s+l.qte,0)) + " unités entrées en stock");
+    });
+  });
+}
+document.getElementById("btnReception").addEventListener("click", ()=>ouvrirReception(null));
+
+/* =====================================================================
+   3. VENTES JOURNALIÈRES — une saisie par date
+   ===================================================================== */
+let dateVentes = aujourdhui();
+let saisieVentes = {};
+
+function chargerJournee(date){
+  saisieVentes = {};
+  const j = journeeDe(date);
+  if (j) j.lignes.forEach(l=> saisieVentes[l.boissonId] = { qte:l.qte, pu:l.pu });
+}
+
+function rendreVentes(){
+  const champ = document.getElementById("dateVentes");
+  if (champ.value !== dateVentes) champ.value = dateVentes;
+  const bs = catalogue();
+  const j = journeeDe(dateVentes);
+
+  document.getElementById("resVentes").textContent =
+    (dateVentes===aujourdhui() ? "Aujourd'hui" : dateLongue(dateVentes))
+    + (j ? " · déjà enregistrée" : "");
+
+  const grille = document.getElementById("grilleVentes");
+  if (!bs.length){
+    grille.innerHTML = '<div class="vide"><b>Aucune boisson au catalogue</b>Ajoutez vos boissons d\'abord.</div>';
+    return;
+  }
+  grille.innerHTML = bs.map(b=>{
+    const e = saisieVentes[b.id];
+    const pu = e ? e.pu : b.prixVente;
+    return '<div class="gr" data-nom="'+ech(b.nom.toLowerCase())+'" style="grid-template-columns:1fr 58px 62px">'
+      + '<span class="gr-nom"><span>'+ech(b.nom)+'</span>'
+      + '<small'+(pu?'':' class="manque"')+'>'
+      + (pu ? argent(pu)+" l'unité · stock "+nombre(stockDe(b)) : "prix de vente à définir")
+      + '</small></span>'
+      + '<input type="number" inputmode="numeric" min="0" step="1" data-v="'+b.id+'" '
+      + 'value="'+(e&&e.qte?e.qte:"")+'" placeholder="0" aria-label="Quantité vendue '+ech(b.nom)+'">'
+      + '<span class="gr-mt num" data-mt="'+b.id+'">'+(e&&e.qte?argent(e.qte*pu):"—")+'</span>'
+      + '</div>';
+  }).join("");
+
+  grille.querySelectorAll("[data-v]").forEach(inp=>
+    inp.addEventListener("input", ()=>{
+      const bid = inp.dataset.v, b = boisson(bid);
+      const q = Math.max(0, Math.round(+inp.value||0));
+      const pu = saisieVentes[bid] ? saisieVentes[bid].pu : (b?b.prixVente:0);
+      if (q) saisieVentes[bid] = { qte:q, pu };
+      else delete saisieVentes[bid];
+      const cel = grille.querySelector('[data-mt="'+bid+'"]');
+      if (cel) cel.textContent = q ? argent(q*pu) : "—";
+      majTotalVentes();
+    }));
+
+  brancherFiltre(document.getElementById("fltVentes"), grille);
+  majTotalVentes();
+}
+
+function majTotalVentes(){
+  let ca=0, q=0, n=0;
+  Object.keys(saisieVentes).forEach(bid=>{
+    const e = saisieVentes[bid]; if (!e || !e.qte) return;
+    ca += e.qte*e.pu; q += e.qte; n++;
+  });
+  document.getElementById("totalVentes").textContent = argent(ca);
+  document.getElementById("totalVentesTxt").textContent =
+    n ? nombre(q)+" unités sur "+n+" référence"+(n>1?"s":"") : "Aucune vente saisie";
+  const btn = document.getElementById("btnValiderVentes");
+  btn.textContent = journeeDe(dateVentes) ? "Mettre à jour" : "Enregistrer";
+  document.getElementById("caLbl").textContent =
+    vueActive==="ventes" && dateVentes!==aujourdhui()
+      ? "Recette du jour" : "Recette du jour";
+}
+
+document.getElementById("dateVentes").addEventListener("change", e=>{
+  dateVentes = e.target.value || aujourdhui();
+  chargerJournee(dateVentes);
+  rendreVentes();
+});
+
+document.getElementById("btnValiderVentes").addEventListener("click", ()=>{
+  const lignes = Object.keys(saisieVentes).filter(bid=>saisieVentes[bid].qte>0).map(bid=>{
+    const b = boisson(bid);
+    return { boissonId:bid, nom:b?b.nom:"", qte:saisieVentes[bid].qte,
+             pu:saisieVentes[bid].pu, pa:(b&&b.prixAchat)||0 };
+  });
+  const sansPrix = lignes.filter(l=>!l.pu);
+  if (sansPrix.length && !confirm(
+      sansPrix.length+" boisson(s) vendue(s) sans prix de vente ne compteront pas dans la recette. Continuer ?")) return;
+
+  const existante = journeeDe(dateVentes);
+  if (!lignes.length){
+    if (!existante){ signaler("Aucune vente saisie"); return; }
+    if (!confirm("Supprimer toutes les ventes du "+dateCourte(dateVentes)+" ?")) return;
+    D.journees = D.journees.filter(x=>x.date!==dateVentes);
+    enregistrer(); rafraichir(); signaler("Ventes du jour supprimées"); return;
+  }
+  if (existante) existante.lignes = lignes;
+  else {
+    D.journees.push({ date:dateVentes, lignes });
+    D.journees.sort((a,b)=>a.date.localeCompare(b.date));
+  }
+  enregistrer(); rafraichir();
+  signaler(argent(lignes.reduce((s,l)=>s+l.qte*l.pu,0)) + " enregistrés pour le " + dateCourte(dateVentes));
+});
+
+document.getElementById("btnEffacerVentes").addEventListener("click", ()=>{
+  if (!Object.keys(saisieVentes).length){ signaler("La saisie est déjà vide"); return; }
+  saisieVentes = {}; rendreVentes(); signaler("Saisie effacée");
+});
+
+/* =====================================================================
+   4. INVENTAIRE — période délimitée par l'inventaire précédent
+   Théorique = stock de référence + entrées de la période − ventes de la période
+   ===================================================================== */
+let invRefCle = null, invDate = null, invSaisie = {};
+
+function pointsReference(){
+  const pts = [{ cle:"depart", date:D.dateDepart, libelle:"Mise en service du "+dateCourte(D.dateDepart) }];
+  D.inventaires.forEach(inv=> pts.push({
+    cle:inv.id, date:inv.date,
+    libelle:"Inventaire du "+dateCourte(inv.date)+" ("+inv.lignes.length+" boissons)"
+  }));
+  return pts;
+}
+function refChoisie(){
+  const pts = pointsReference();
+  return pts.find(p=>p.cle===invRefCle) || pts[pts.length-1];
+}
+/* Référence propre à une boisson : si elle n'était pas comptée dans
+   l'inventaire choisi, on remonte au précédent où elle l'était. */
+function refBoisson(bid, pt){
+  if (pt.cle === "depart"){
+    const b = boisson(bid);
+    return { base:(b && b.stockInitial)||0, date:D.dateDepart, depart:true, libelle:"mise en service" };
+  }
+  return reference(bid, pt.date);
+}
+function ligneTheorique(b, pt, dateMax){
+  const r = refBoisson(b.id, pt);
+  const c = cumulsPeriode(b.id, r, dateMax);
+  return { ref:r, entrees:c.entrees, ventes:c.ventes, theorique:r.base + c.entrees - c.ventes };
+}
+
+function rendreInventaire(){
+  const bs = catalogue();
+  const pts = pointsReference();
+  if (!invDate) invDate = aujourdhui();
+  if (!invRefCle) invRefCle = pts[pts.length-1].cle;
+  if (D.comptage && D.comptage.date===invDate && D.comptage.refCle===invRefCle
+      && !Object.keys(invSaisie).length) invSaisie = Object.assign({}, D.comptage.valeurs);
+
+  const pt = refChoisie();
+  document.getElementById("invReference").innerHTML = pts.map(p=>
+    '<option value="'+p.cle+'"'+(p.cle===pt.cle?" selected":"")+'>'+ech(p.libelle)+'</option>').join("");
+  document.getElementById("invDate").value = invDate;
+  document.getElementById("invPeriode").value =
+    (pt.cle==="depart" ? "jusqu'au "+dateCourte(invDate)
+                       : "du "+dateCourte(lendemain(pt.date))+" au "+dateCourte(invDate));
+  document.getElementById("resInv").textContent =
+    D.inventaires.length ? D.inventaires.length+" inventaire"+(D.inventaires.length>1?"s":"")+" validé"+(D.inventaires.length>1?"s":"") : "";
+
+  const grille = document.getElementById("grilleInv");
+  if (!bs.length){
+    grille.innerHTML = '<div class="vide"><b>Rien à compter</b>Le catalogue est vide.</div>';
+    return;
+  }
+  if (pt.date > invDate){
+    grille.innerHTML = '<div class="vide"><b>Dates incohérentes</b>'
+      + 'La date du comptage doit être postérieure à l\'inventaire de référence.</div>';
+    document.getElementById("resumeInv").innerHTML = "";
+    document.getElementById("barreInvTxt").textContent = "Dates incohérentes";
+    document.getElementById("barreInvEc").textContent = "—";
+    document.getElementById("btnValiderInv").setAttribute("disabled","");
+    return;
+  }
+
+  grille.innerHTML = bs.map(b=>{
+    const t = ligneTheorique(b, pt, invDate);
+    const calc = nombre(t.ref.base) + " + " + nombre(t.entrees) + " − " + nombre(t.ventes)
+               + " = " + nombre(t.theorique);
+    return '<div class="cpt" data-nom="'+ech(b.nom.toLowerCase())+'" data-th="'+t.theorique+'" data-bid="'+b.id+'">'
+      + '<div class="cpt-h"><span>'+ech(b.nom)+'</span>'
+      + '<input type="number" inputmode="numeric" min="0" step="1" data-c="'+b.id+'" '
+      + 'value="'+(invSaisie[b.id]!=null?invSaisie[b.id]:"")+'" placeholder="—" '
+      + 'aria-label="Stock réel '+ech(b.nom)+'"></div>'
+      + '<div class="cpt-d"><span class="cpt-calc">'+calc+'</span>'
+      + '<span class="cpt-ec ec-nul" data-ec="'+b.id+'">à compter</span></div></div>';
+  }).join("");
+
+  grille.querySelectorAll("[data-c]").forEach(inp=>
+    inp.addEventListener("input", ()=>{
+      const v = inp.value.trim();
+      if (v==="") delete invSaisie[inp.dataset.c];
+      else invSaisie[inp.dataset.c] = Math.max(0, Math.round(+v||0));
+      D.comptage = { date:invDate, refCle:invRefCle, valeurs:Object.assign({}, invSaisie) };
+      enregistrer();
+      majEcarts();
+    }));
+
+  brancherFiltre(document.getElementById("fltInv"), grille);
+  rendreHistoInv();
+  majEcarts();
+}
+
+function majEcarts(){
+  const grille = document.getElementById("grilleInv");
+  let comptes=0, manquants=0, surplus=0, valManquants=0, valSurplus=0, exacts=0;
+
+  grille.querySelectorAll("[data-bid]").forEach(el=>{
+    const bid = el.dataset.bid, th = +el.dataset.th;
+    const cel = el.querySelector('[data-ec="'+bid+'"]');
+    if (invSaisie[bid]==null){ cel.textContent="à compter"; cel.className="cpt-ec ec-nul"; return; }
+    comptes++;
+    const e = invSaisie[bid] - th;
+    const b = boisson(bid);
+    if (e<0){ manquants += -e; valManquants += -e * ((b&&b.prixVente)||0); }
+    else if (e>0){ surplus += e; valSurplus += e * ((b&&b.prixAchat)||0); }
+    else exacts++;
+    cel.textContent = e===0 ? "exact" : (e>0?"+":"") + nombre(e);
+    cel.className = "cpt-ec " + (e>0?"ec-plus":e<0?"ec-moins":"ec-nul");
+  });
+
+  const res = document.getElementById("resumeInv");
+  const btn = document.getElementById("btnValiderInv");
+  const bTxt = document.getElementById("barreInvTxt");
+  const bEc = document.getElementById("barreInvEc");
+  bTxt.textContent = comptes
+    ? comptes + " comptée" + (comptes>1?"s":"") + " sur " + D.boissons.length
+    : "Comptage non commencé";
+  /* un surplus est aussi un écart : ne jamais annoncer "aucun écart" tant
+     qu'une différence subsiste, dans un sens ou dans l'autre */
+  if (!comptes){ bEc.textContent = "—"; bEc.style.color = "var(--muet)"; }
+  else if (manquants){ bEc.textContent = "− "+nombre(manquants); bEc.style.color = "var(--rouge)"; }
+  else if (surplus){ bEc.textContent = "+ "+nombre(surplus); bEc.style.color = "var(--accent)"; }
+  else { bEc.textContent = "aucun écart"; bEc.style.color = "var(--vert)"; }
+  if (!comptes){
+    res.innerHTML = '<p class="aide" style="margin:0 0 12px">Saisissez le stock réellement compté. '
+      + 'Les boissons laissées vides ne seront pas touchées, vous pouvez donc compter en plusieurs passages.</p>';
+    btn.setAttribute("disabled","");
+    return;
+  }
+  btn.removeAttribute("disabled");
+  res.innerHTML =
+    '<div class="bloc" style="margin:0 0 14px"><h3>Résumé des écarts</h3><div class="bloc-corps">'
+    + '<div class="stat"><span>Boissons comptées</span><b class="num">'+comptes+' sur '+D.boissons.length+'</b></div>'
+    + '<div class="stat"><span>Comptages exacts</span><b class="num">'+exacts+'</b></div>'
+    + '<div class="stat"><span>Unités manquantes</span><b class="num'+(manquants?' mal':'')+'">'+nombre(manquants)+'</b></div>'
+    + '<div class="stat"><span>Unités en surplus</span><b class="num">'+nombre(surplus)+'</b></div>'
+    + '<div class="stat"><span>Manque à gagner estimé</span><b class="num'+(valManquants?' mal':'')+'">'+argent(valManquants)+'</b></div>'
+    + '</div></div>';
+}
+
+document.getElementById("invReference").addEventListener("change", e=>{
+  invRefCle = e.target.value; invSaisie = {}; rendreInventaire();
+});
+document.getElementById("invDate").addEventListener("change", e=>{
+  invDate = e.target.value || aujourdhui(); rendreInventaire();
+});
+document.getElementById("btnCopierInv").addEventListener("click", ()=>{
+  const pt = refChoisie();
+  catalogue().forEach(b=> invSaisie[b.id] = Math.max(0, ligneTheorique(b, pt, invDate).theorique));
+  D.comptage = { date:invDate, refCle:invRefCle, valeurs:Object.assign({}, invSaisie) };
+  enregistrer(); rendreInventaire(); signaler("Théorique recopié — corrigez ce qui diffère");
+});
+document.getElementById("btnEffacerInv").addEventListener("click", ()=>{
+  invSaisie = {}; D.comptage = null; enregistrer(); rendreInventaire(); signaler("Saisie effacée");
+});
+
+document.getElementById("btnValiderInv").addEventListener("click", ()=>{
+  const pt = refChoisie();
+  const lignes = [];
+  catalogue().forEach(b=>{
+    if (invSaisie[b.id]==null) return;
+    const t = ligneTheorique(b, pt, invDate);
+    lignes.push({ boissonId:b.id, nom:b.nom, base:t.ref.base, baseDate:t.ref.date,
+                  entrees:t.entrees, ventes:t.ventes, theorique:t.theorique,
+                  reel:invSaisie[b.id], ecart:invSaisie[b.id]-t.theorique,
+                  pa:b.prixAchat, pv:b.prixVente });
+  });
+  if (!lignes.length){ signaler("Aucun comptage saisi"); return; }
+  const nbEcarts = lignes.filter(l=>l.ecart!==0).length;
+  const manquants = lignes.reduce((s,l)=> s + (l.ecart<0 ? -l.ecart : 0), 0);
+
+  if (!confirm("Valider l'inventaire du "+dateCourte(invDate)+" ?\n\n"
+    + lignes.length+" boisson(s) comptée(s)\n"+nbEcarts+" écart(s), "+manquants+" unité(s) manquante(s)\n\n"
+    + "Le stock compté devient le nouveau point de départ des calculs.")) return;
+
+  D.inventaires.push({ id:id(), date:invDate, refDate:pt.date,
+                       refLibelle:pt.libelle, lignes });
+  D.inventaires.sort((a,b)=>a.date.localeCompare(b.date));
+  D.comptage = null; invSaisie = {}; invRefCle = null;
+  enregistrer(); rafraichir(); signaler("Inventaire validé · stock recalé");
+});
+
+function rendreHistoInv(){
+  const zone = document.getElementById("histoInv");
+  if (!D.inventaires.length){ zone.innerHTML = ""; return; }
+  const invs = D.inventaires.slice().reverse();
+  zone.innerHTML = '<div class="titre"><b>Inventaires validés</b></div><div class="liste">'
+    + invs.map(inv=>{
+        const ec = inv.lignes.filter(l=>l.ecart!==0).length;
+        const mq = inv.lignes.reduce((s,l)=> s + (l.ecart<0?-l.ecart:0), 0);
+        const val = inv.lignes.reduce((s,l)=> s + (l.ecart<0 ? -l.ecart*(l.pv||0) : 0), 0);
+        return '<button class="ligne" data-inv="'+inv.id+'">'
+          + '<span class="corps"><span class="nom">'+dateLongue(inv.date)+'</span>'
+          + '<span class="meta">'+inv.lignes.length+' comptées · '+ec+' écart'+(ec>1?"s":"")
+          + (val?' · '+argent(val)+' de manque':'')+'</span></span>'
+          + '<span class="chiffre"><span class="q num" style="font-size:1.25rem;color:'
+          + (mq?"var(--rouge)":"var(--vert)")+'">'+(mq?"−"+nombre(mq):"0")+'</span>'
+          + '<span class="u">manquantes</span></span></button>';
+      }).join("") + '</div>';
+  zone.querySelectorAll("[data-inv]").forEach(el=>
+    el.addEventListener("click", ()=>detailInventaire(el.dataset.inv)));
+}
+
+function detailInventaire(iid){
+  const inv = D.inventaires.find(x=>x.id===iid); if (!inv) return;
+  const ecarts = inv.lignes.filter(l=>l.ecart!==0).sort((a,b)=>a.ecart-b.ecart);
+  ouvrirFeuille(
+    "<h2>Inventaire du "+dateCourte(inv.date)+"</h2>"
+    + '<p class="aide">Période analysée : à partir de l\'' + ech(inv.refLibelle||"origine").toLowerCase()
+    + '. Calcul appliqué à chaque boisson : stock de référence + entrées − ventes.</p>'
+    + (ecarts.length
+        ? '<table><thead><tr><th>Boisson</th><th>Théor.</th><th>Réel</th><th>Écart</th></tr></thead><tbody>'
+          + ecarts.map(l=>'<tr><td>'+ech(l.nom)+'</td><td class="num">'+nombre(l.theorique)
+            + '</td><td class="num">'+nombre(l.reel)+'</td><td class="num" style="color:'
+            + (l.ecart<0?"var(--rouge)":"var(--vert)")+'">'+(l.ecart>0?"+":"")+nombre(l.ecart)
+            + '</td></tr>').join("")
+          + '</tbody></table>'
+        : '<p class="aide">Aucun écart : tous les comptages correspondaient au théorique.</p>')
+    + '<button class="btn btn-fant" id="iImp" style="margin-top:14px">Imprimer cet inventaire</button>'
+    + '<button class="btn btn-danger" id="iDel">Supprimer cet inventaire</button>'
+    + '<button class="btn btn-fant" id="iNon">Fermer</button>',
+  ()=>{
+    document.getElementById("iNon").addEventListener("click", fermerFeuille);
+    document.getElementById("iImp").addEventListener("click", ()=>imprimerInventaire(inv));
+    document.getElementById("iDel").addEventListener("click", ()=>{
+      if (!confirm("Supprimer cet inventaire ? Les stocks seront recalculés depuis le point de départ précédent.")) return;
+      D.inventaires = D.inventaires.filter(x=>x.id!==iid);
+      invRefCle = null; enregistrer(); fermerFeuille(); rafraichir(); signaler("Inventaire supprimé");
+    });
+  });
+}
+
+/* =====================================================================
+   5. RAPPORTS
+   ===================================================================== */
+let periode = null;
+const debutDuMois = () => aujourdhui().slice(0,8) + "01";
+
+function rendreRapports(){
+  if (!periode) periode = { debut:debutDuMois(), fin:aujourdhui() };
+  const et = etatStock();
+  const a = activite(periode.debut, periode.fin);
+
+  document.getElementById("corpsRapports").innerHTML =
+    '<div class="titre"><b>Rapports</b></div>'
+
+    + '<div class="bloc"><h3>Point d\'activité</h3><div class="bloc-corps">'
+    + '<div class="champs deux" style="padding:0 0 10px">'
+    +   '<label><span class="lib">Date de début</span><input type="date" id="pDebut" value="'+periode.debut+'"></label>'
+    +   '<label><span class="lib">Date de fin</span><input type="date" id="pFin" value="'+periode.fin+'"></label>'
+    + '</div>'
+    + '<div class="paire" style="margin-bottom:14px">'
+    +   '<button class="btn btn-fant" data-p="jour" style="padding:9px;font-size:.75rem">Aujourd\'hui</button>'
+    +   '<button class="btn btn-fant" data-p="semaine" style="padding:9px;font-size:.75rem">7 jours</button>'
+    +   '<button class="btn btn-fant" data-p="mois" style="padding:9px;font-size:.75rem">Ce mois</button>'
+    + '</div>'
+    + '<div class="stat"><span>Chiffre d\'affaires</span><b class="num argent">'+argent(a.ca)+'</b></div>'
+    + '<div class="stat"><span>Marge brute estimée</span><b class="num">'+argent(a.marge)+'</b></div>'
+    + '<div class="stat"><span>Unités vendues</span><b class="num">'+nombre(a.vendues)+'</b></div>'
+    + '<div class="stat"><span>Unités reçues</span><b class="num">'+nombre(a.recues)+'</b></div>'
+    + '<div class="stat"><span>Achats de marchandise</span><b class="num">'+argent(a.achats)+'</b></div>'
+    + '<div class="stat"><span>Jours de vente saisis</span><b class="num">'+a.jours+'</b></div>'
+    + '<div class="stat"><span>Recette moyenne par jour</span><b class="num">'+argent(a.jours?a.ca/a.jours:0)+'</b></div>'
+    + (a.lignes.length
+        ? '<table style="margin-top:14px"><thead><tr><th>Boisson</th><th>Vend.</th><th>Reçu</th><th>CA</th></tr></thead><tbody>'
+          + a.lignes.map(l=>'<tr><td>'+ech(l.nom)+'</td><td class="num">'+nombre(l.vendues)
+            + '</td><td class="num">'+nombre(l.recues)+'</td><td class="num">'+argent(l.ca)+'</td></tr>').join("")
+          + '</tbody><tfoot><tr><td>Total</td><td class="num">'+nombre(a.vendues)+'</td><td class="num">'
+          + nombre(a.recues)+'</td><td class="num">'+argent(a.ca)+'</td></tr></tfoot></table>'
+        : '<p class="aide" style="margin:14px 0 0">Aucun mouvement sur cette période.</p>')
+    + '</div></div>'
+
+    + '<div class="bloc"><h3>Stock actuel</h3><div class="bloc-corps">'
+    + '<div class="stat"><span>Unités en stock</span><b class="num">'+nombre(et.unites)+'</b></div>'
+    + '<div class="stat"><span>Valeur au prix d\'achat</span><b class="num">'+argent(et.valeurAchat)+'</b></div>'
+    + '<div class="stat"><span>Valeur au prix de vente</span><b class="num argent">'+argent(et.valeurVente)+'</b></div>'
+    + '<div class="stat"><span>Boissons à surveiller</span><b class="num'+(et.alertes.length?' mal':'')+'">'+et.alertes.length+'</b></div>'
+    + (et.alertes.length ? '<p class="aide" style="margin:10px 0 0">'
+        + ech(et.alertes.map(b=>b.nom+" ("+nombre(stockDe(b))+")").join(", "))+'</p>' : "")
+    + '</div></div>'
+
+    + '<div class="bloc"><h3>Exporter</h3><div class="bloc-corps">'
+    + '<button class="btn" id="eImp">Rapport PDF</button>'
+    + '<button class="btn btn-fant" id="eStock">Stock actuel en Excel</button>'
+    + '<button class="btn btn-fant" id="eAct">Activité de la période en Excel</button>'
+    + (D.inventaires.length ? '<button class="btn btn-fant" id="eInv">Dernier inventaire en Excel</button>' : "")
+    + '<p class="aide" style="margin:11px 0 0">Pour le PDF, choisissez <b>Enregistrer au format PDF</b> '
+    + 'dans l\'aperçu d\'impression. Les fichiers Excel sont au format CSV, séparateur point-virgule.</p>'
+    + '</div></div>'
+
+    + '</div></div>';
+
+  const cd = document.getElementById("pDebut"), cf = document.getElementById("pFin");
+  function chg(){
+    let d = cd.value||debutDuMois(), f = cf.value||aujourdhui();
+    periode = d>f ? {debut:f, fin:d} : {debut:d, fin:f};
+    rendreRapports();
+  }
+  cd.addEventListener("change", chg); cf.addEventListener("change", chg);
+  document.querySelectorAll("[data-p]").forEach(btn=>
+    btn.addEventListener("click", ()=>{
+      const f = aujourdhui();
+      if (btn.dataset.p==="jour") periode={debut:f,fin:f};
+      else if (btn.dataset.p==="semaine"){
+        const d=new Date(); d.setDate(d.getDate()-6);
+        periode={debut:d.toLocaleDateString("en-CA"),fin:f};
+      } else periode={debut:debutDuMois(),fin:f};
+      rendreRapports();
+    }));
+
+  document.getElementById("eImp").addEventListener("click", imprimerRapport);
+  document.getElementById("eStock").addEventListener("click", exporterStock);
+  document.getElementById("eAct").addEventListener("click", exporterActivite);
+  const bi = document.getElementById("eInv");
+  if (bi) bi.addEventListener("click", ()=>exporterInventaire(D.inventaires[D.inventaires.length-1]));
+}
+
+/* =====================================================================
+   EXPORTS
+   ===================================================================== */
+function telecharger(nom, contenu, type){
+  const blob = new Blob([contenu], {type:type+";charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = nom;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+  signaler(nom + " téléchargé");
+}
+function versCSV(lignes){
+  const cel = c=>{ const s=String(c==null?"":c); return /[";\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
+  return "\uFEFF" + lignes.map(l=>l.map(cel).join(";")).join("\r\n");
+}
+const suffixe = () => aujourdhui().replace(/-/g,"");
+
+function exporterStock(){
+  const et = etatStock();
+  const l = [[(D.etablissement+" — Stock au ")+dateLongue(aujourdhui())],[],
+    ["Boisson","Stock","Prix d'achat","Prix de vente","Valeur achat","Valeur vente","Référence du calcul"]];
+  et.lignes.forEach(b=>{
+    const r = reference(b.id, null), s = stockDe(b);
+    l.push([b.nom, s, b.prixAchat, b.prixVente, s*b.prixAchat, s*b.prixVente,
+            r.libelle+" ("+nombre(r.base)+")"]);
+  });
+  l.push([], ["Total", et.unites, "", "", et.valeurAchat, et.valeurVente, ""]);
+  telecharger("GEBEN-stock-"+suffixe()+".csv", versCSV(l), "text/csv");
+}
+
+function exporterActivite(){
+  const a = activite(periode.debut, periode.fin);
+  const l = [[(D.etablissement+" — Point d'activité")],
+    ["Du "+dateLongue(a.debut)+" au "+dateLongue(a.fin)],[],
+    ["Chiffre d'affaires", a.ca],["Marge brute estimée", a.marge],
+    ["Unités vendues", a.vendues],["Unités reçues", a.recues],
+    ["Achats de marchandise", a.achats],["Jours de vente saisis", a.jours],[],
+    ["Boisson","Unités vendues","Unités reçues","Chiffre d'affaires","Marge"]];
+  a.lignes.forEach(x=> l.push([x.nom, x.vendues, x.recues, x.ca, x.marge]));
+  l.push(["Total", a.vendues, a.recues, a.ca, a.marge]);
+
+  l.push([], ["Ventes jour par jour"], ["Date","Boisson","Quantité","Prix unitaire","Montant"]);
+  D.journees.filter(j=>j.date>=a.debut&&j.date<=a.fin)
+    .sort((x,y)=>x.date.localeCompare(y.date))
+    .forEach(j=> j.lignes.forEach(x=>{
+      const b = boisson(x.boissonId);
+      l.push([x.date, b?b.nom:x.nom, x.qte, x.pu, x.qte*x.pu]);
+    }));
+
+  l.push([], ["Entrées de stock"], ["Date","Fournisseur","Boisson","Quantité"]);
+  D.receptions.filter(r=>r.date>=a.debut&&r.date<=a.fin)
+    .sort((x,y)=>x.date.localeCompare(y.date))
+    .forEach(r=> r.lignes.forEach(x=>{
+      const b = boisson(x.boissonId);
+      l.push([r.date, r.fournisseur, b?b.nom:x.nom, x.qte]);
+    }));
+
+  telecharger("GEBEN-activite-"+a.debut.replace(/-/g,"")+"-"+a.fin.replace(/-/g,"")+".csv",
+              versCSV(l), "text/csv");
+}
+
+function exporterInventaire(inv){
+  if (!inv) return;
+  const l = [[(D.etablissement+" — Inventaire du ")+dateLongue(inv.date)],
+    ["Point de départ : "+(inv.refLibelle||"origine")],[],
+    ["Boisson","Stock de référence","Entrées période","Ventes période","Stock théorique","Stock réel","Écart","Valeur de l'écart"]];
+  inv.lignes.forEach(x=> l.push([x.nom, x.base, x.entrees, x.ventes, x.theorique, x.reel, x.ecart,
+    Math.round(x.ecart * (x.ecart<0 ? (x.pv||0) : (x.pa||0)))]));
+  const mq = inv.lignes.reduce((s,x)=>s+(x.ecart<0?-x.ecart:0),0);
+  const sp = inv.lignes.reduce((s,x)=>s+(x.ecart>0?x.ecart:0),0);
+  l.push([], ["Unités manquantes", mq], ["Unités en surplus", sp],
+    ["Manque à gagner estimé", inv.lignes.reduce((s,x)=>s+(x.ecart<0?-x.ecart*(x.pv||0):0),0)]);
+  telecharger("GEBEN-inventaire-"+inv.date.replace(/-/g,"")+".csv", versCSV(l), "text/csv");
+}
+
+function enteteImpression(soustitre){
+  return "<h1>"+ech(D.etablissement)+"</h1><div class=\"ent\">"+soustitre
+    + " · édité le "+dateLongue(aujourdhui())+"</div>";
+}
+function imprimerRapport(){
+  const et = etatStock();
+  const a = activite(periode.debut, periode.fin);
+  document.getElementById("impression").innerHTML =
+    enteteImpression("Rapport de stock et d'activité")
+    + "<h2>Activité du "+dateLongue(a.debut)+" au "+dateLongue(a.fin)+"</h2>"
+    + '<div class="res"><div>Chiffre d\'affaires<b>'+argent(a.ca)+'</b></div>'
+    + '<div>Marge brute<b>'+argent(a.marge)+'</b></div>'
+    + '<div>Unités vendues<b>'+nombre(a.vendues)+'</b></div>'
+    + '<div>Unités reçues<b>'+nombre(a.recues)+'</b></div></div>'
+    + (a.lignes.length
+        ? "<table><thead><tr><th>Boisson</th><th>Vendues</th><th>Reçues</th><th>Chiffre d'affaires</th><th>Marge</th></tr></thead><tbody>"
+          + a.lignes.map(l=>"<tr><td>"+ech(l.nom)+"</td><td>"+nombre(l.vendues)+"</td><td>"
+            + nombre(l.recues)+"</td><td>"+argent(l.ca)+"</td><td>"+argent(l.marge)+"</td></tr>").join("")
+          + "</tbody><tfoot><tr><td>Total</td><td>"+nombre(a.vendues)+"</td><td>"+nombre(a.recues)
+          + "</td><td>"+argent(a.ca)+"</td><td>"+argent(a.marge)+"</td></tr></tfoot></table>"
+        : "<p>Aucun mouvement sur cette période.</p>")
+    + "<h2>Stock au "+dateLongue(aujourdhui())+"</h2>"
+    + "<table><thead><tr><th>Boisson</th><th>Stock</th><th>Prix de vente</th><th>Valeur vente</th></tr></thead><tbody>"
+    + et.lignes.map(b=>{ const s=stockDe(b);
+        return "<tr><td>"+ech(b.nom)+"</td><td>"+nombre(s)+"</td><td>"+argent(b.prixVente)
+             + "</td><td>"+argent(s*b.prixVente)+"</td></tr>"; }).join("")
+    + "</tbody><tfoot><tr><td>Total</td><td>"+nombre(et.unites)+"</td><td></td><td>"
+    + argent(et.valeurVente)+"</td></tr></tfoot></table>"
+    + '<div class="pied">Valeur du stock au prix d\'achat : '+argent(et.valeurAchat)
+    + ". Stock calculé depuis le dernier inventaire de chaque boisson, plus les entrées, moins les ventes.</div>";
+  setTimeout(()=>window.print(), 120);
+}
+function imprimerInventaire(inv){
+  const mq = inv.lignes.reduce((s,x)=>s+(x.ecart<0?-x.ecart:0),0);
+  const sp = inv.lignes.reduce((s,x)=>s+(x.ecart>0?x.ecart:0),0);
+  const val = inv.lignes.reduce((s,x)=>s+(x.ecart<0?-x.ecart*(x.pv||0):0),0);
+  document.getElementById("impression").innerHTML =
+    enteteImpression("Inventaire du "+dateLongue(inv.date))
+    + "<h2>Résumé</h2>"
+    + '<div class="res"><div>Boissons comptées<b>'+inv.lignes.length+'</b></div>'
+    + '<div>Écarts<b>'+inv.lignes.filter(l=>l.ecart!==0).length+'</b></div>'
+    + '<div>Unités manquantes<b>'+nombre(mq)+'</b></div>'
+    + '<div>Unités en surplus<b>'+nombre(sp)+'</b></div>'
+    + '<div>Manque à gagner<b>'+argent(val)+'</b></div></div>'
+    + "<p>Point de départ : "+ech(inv.refLibelle||"origine")
+    + ". Théorique = stock de référence + entrées de la période − ventes de la période.</p>"
+    + "<h2>Détail par boisson</h2>"
+    + "<table><thead><tr><th>Boisson</th><th>Référence</th><th>Entrées</th><th>Ventes</th>"
+    + "<th>Théorique</th><th>Réel</th><th>Écart</th></tr></thead><tbody>"
+    + inv.lignes.map(l=>"<tr><td>"+ech(l.nom)+"</td><td>"+nombre(l.base)+"</td><td>"+nombre(l.entrees)
+      + "</td><td>"+nombre(l.ventes)+"</td><td>"+nombre(l.theorique)+"</td><td>"+nombre(l.reel)
+      + "</td><td>"+(l.ecart>0?"+":"")+nombre(l.ecart)+"</td></tr>").join("")
+    + "</tbody></table>"
+    + '<div class="pied">Document édité par l\'application de gestion de stock de '
+    + ech(D.etablissement) + '.</div>';
+  setTimeout(()=>window.print(), 120);
+}
+
+/* =====================================================================
+   SAUVEGARDE
+   ===================================================================== */
+function creerSauvegarde(){
+  telecharger("GEBEN-sauvegarde-"+suffixe()+".json",
+    JSON.stringify({version:2, exporteLe:new Date().toISOString(), donnees:D}, null, 1),
+    "application/json");
+}
+function restaurerSauvegarde(){
+  const inp = document.createElement("input");
+  inp.type="file"; inp.accept=".json,application/json";
+  inp.addEventListener("change", ()=>{
+    const f = inp.files && inp.files[0]; if (!f) return;
+    const lec = new FileReader();
+    lec.onload = ()=>{
+      try{
+        const lu = JSON.parse(lec.result);
+        const d = lu && lu.donnees ? lu.donnees : lu;
+        if (!d || !Array.isArray(d.boissons)) throw new Error("format");
+        if (!confirm("Remplacer toutes les données actuelles ?\n\n"+d.boissons.length
+          +" boissons, "+(d.journees||[]).length+" journées de vente.")) return;
+        D = normaliser(d);
+        invRefCle=null; invSaisie={}; periode=null;
+        appliquerTheme(); chargerJournee(dateVentes);
+        enregistrer(); rafraichir(); signaler("Sauvegarde restaurée");
+      }catch(e){ signaler("Fichier illisible : choisissez une sauvegarde GEBEN"); }
+    };
+    lec.readAsText(f);
+  });
+  inp.click();
+}
+function effacerTout(){
+  if (!confirm("Effacer définitivement toutes les données ?\n\nCréez une sauvegarde avant.")) return;
+  if (!confirm("Dernière confirmation : tout effacer ?")) return;
+  D = normaliser({ etablissement:D.etablissement, theme:D.theme, dateDepart:aujourdhui() });
+  invSaisie={}; saisieVentes={}; invRefCle=null; periode=null;
+  enregistrer(); rafraichir(); signaler("Toutes les données ont été effacées");
+}
+
+/* =====================================================================
+   INSTALLATION SUR L'APPAREIL
+   Chrome ne propose l'installation que si la page est servie en HTTPS, avec
+   un manifeste et un service worker enregistré. Ouvert directement depuis le
+   gestionnaire de fichiers (protocole file:), tout fonctionne sauf
+   l'installation : le code ci-dessous se contente alors de se taire.
+   ===================================================================== */
+let invitationInstall = null;
+
+function estInstallee(){
+  try{
+    return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches)
+        || window.navigator.standalone === true;
+  }catch(e){ return false; }
+}
+
+window.addEventListener("beforeinstallprompt", e=>{
+  e.preventDefault();
+  invitationInstall = e;
+  if (vueActive === "boissons") rendreBoissons();
+});
+
+window.addEventListener("appinstalled", ()=>{
+  invitationInstall = null;
+  signaler("Application installée sur l'écran d'accueil");
+  if (vueActive === "boissons") rendreBoissons();
+});
+
+async function lancerInstallation(){
+  if (!invitationInstall){
+    signaler("Utilisez le menu du navigateur, « Installer l'application »");
+    return;
+  }
+  const invitation = invitationInstall;
+  invitationInstall = null;
+  try{
+    invitation.prompt();
+    const choix = await invitation.userChoice;
+    if (choix && choix.outcome === "dismissed") invitationInstall = invitation;
+  }catch(e){ signaler("Installation impossible depuis ce navigateur"); }
+  if (vueActive === "boissons") rendreBoissons();
+}
+
+/* mise en cache de l'application pour un fonctionnement sans réseau */
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("./sw.js").catch(()=>{});
+  });
+}
+
+/* =====================================================================
+   RÉGLAGES
+   ===================================================================== */
+function nuancier(liste, courant, attribut){
+  return '<div class="chips">' + liste.map(c=>
+    '<button class="chip" '+attribut+'="'+c.val+'" title="'+c.nom+'" aria-label="'+c.nom+'" '
+    + 'aria-pressed="'+(c.val.toLowerCase()===String(courant).toLowerCase())+'">'
+    + '<span style="background:'+c.val+'"></span></button>').join("") + '</div>';
+}
+
+function ouvrirReglages(){
+  const t = D.theme || THEME_DEFAUT;
+  ouvrirFeuille(
+    "<h2>Réglages</h2>"
+    + '<label><span class="lib">Nom de l\'établissement</span>'
+    + '<input id="gEtab" value="'+ech(D.etablissement)+'" maxlength="40" autocomplete="off"></label>'
+    + '<p class="aide">Ce nom apparaît en haut de l\'écran et sur tous les rapports imprimés.</p>'
+
+    + '<hr class="rgl-sep"><p class="rgl-t">Couleur de fond</p>'
+    + nuancier(FONDS, t.fond, "data-fond")
+    + '<label style="margin-top:10px"><span class="lib">Ou une couleur libre</span>'
+    + '<input type="color" id="gFond" value="'+t.fond+'"></label>'
+    + '<p class="aide">Les surfaces, les filets et le texte sont recalculés automatiquement '
+    + 'à partir du fond choisi, pour rester lisibles sur clair comme sur sombre.</p>'
+
+    + '<p class="rgl-t">Couleur d\'accent</p>'
+    + nuancier(ACCENTS, t.accent, "data-accent")
+    + '<label style="margin-top:10px"><span class="lib">Ou une couleur libre</span>'
+    + '<input type="color" id="gAccent" value="'+t.accent+'"></label>'
+    + '<p class="aide">L\'accent sert aux montants, aux boutons et à l\'onglet actif.</p>'
+    + '<button class="btn btn-fant" id="gReset">Revenir au thème d\'origine</button>'
+
+    + '<hr class="rgl-sep"><p class="rgl-t">Installation</p>'
+    + (estInstallee()
+        ? '<p class="aide" style="margin-top:0">L\'application est installée sur cet appareil. '
+          + 'Elle fonctionne sans connexion internet.</p>'
+        : invitationInstall
+          ? '<p class="aide" style="margin-top:0">Ajoutez l\'application à l\'écran d\'accueil '
+            + 'pour l\'ouvrir directement, avec son icône, sans barre de navigateur.</p>'
+            + '<button class="btn" id="gInstall">Installer sur l\'écran d\'accueil</button>'
+          : '<p class="aide" style="margin-top:0">Pour installer : menu du navigateur, puis '
+            + '« Installer l\'application » ou « Ajouter à l\'écran d\'accueil ». Si l\'option '
+            + 'n\'apparaît pas, c\'est que la page n\'est pas ouverte depuis une adresse en https.</p>')
+
+    + '<hr class="rgl-sep"><p class="rgl-t">Sauvegarde des données</p>'
+    + '<p class="aide" style="margin-top:0">Les données sont uniquement sur ce téléphone. '
+    + 'Créez une sauvegarde chaque semaine et envoyez-la sur WhatsApp.</p>'
+    + '<button class="btn btn-fant" id="gOut">Créer une sauvegarde</button>'
+    + '<button class="btn btn-fant" id="gIn">Restaurer une sauvegarde</button>'
+    + '<button class="btn btn-danger" id="gRaz">Effacer toutes les données</button>'
+    + '<p class="aide" style="margin:12px 0 0">'+D.boissons.length+' boissons · '
+    + D.receptions.length+' réceptions · '+D.journees.length+' journées de vente · '
+    + D.inventaires.length+' inventaires · mise en service le '+dateCourte(D.dateDepart)+'</p>'
+    + '<button class="btn btn-fant" id="gFin" style="margin-top:14px">Fermer</button>',
+  ()=>{
+    /* cle : "fond" ou "accent" ; attribut : "data-fond" ou "data-accent" */
+    function poser(cle, attribut, val){
+      D.theme = Object.assign({}, D.theme || THEME_DEFAUT);
+      D.theme[cle] = val;
+      appliquerTheme(); enregistrer();
+      fContenu.querySelectorAll("["+attribut+"]").forEach(c=>
+        c.setAttribute("aria-pressed",
+          c.getAttribute(attribut).toLowerCase() === val.toLowerCase() ? "true" : "false"));
+    }
+    fContenu.querySelectorAll("[data-fond]").forEach(c=>
+      c.addEventListener("click", ()=>{
+        const v = c.dataset.fond;
+        poser("fond", "data-fond", v);
+        document.getElementById("gFond").value = v;
+      }));
+    fContenu.querySelectorAll("[data-accent]").forEach(c=>
+      c.addEventListener("click", ()=>{
+        const v = c.dataset.accent;
+        poser("accent", "data-accent", v);
+        document.getElementById("gAccent").value = v;
+      }));
+    document.getElementById("gFond").addEventListener("input", e=>
+      poser("fond", "data-fond", e.target.value));
+    document.getElementById("gAccent").addEventListener("input", e=>
+      poser("accent", "data-accent", e.target.value));
+    document.getElementById("gReset").addEventListener("click", ()=>{
+      D.theme = Object.assign({}, THEME_DEFAUT);
+      appliquerTheme(); enregistrer(); ouvrirReglages(); signaler("Thème d'origine rétabli");
+    });
+
+    document.getElementById("gEtab").addEventListener("change", e=>{
+      D.etablissement = e.target.value.trim() || "BAR RESTO GEBEN";
+      enregistrer(); majEntete();
+    });
+
+    const gi = document.getElementById("gInstall");
+    if (gi) gi.addEventListener("click", async ()=>{ await lancerInstallation(); fermerFeuille(); });
+    document.getElementById("gOut").addEventListener("click", creerSauvegarde);
+    document.getElementById("gIn").addEventListener("click", restaurerSauvegarde);
+    document.getElementById("gRaz").addEventListener("click", effacerTout);
+    document.getElementById("gFin").addEventListener("click", fermerFeuille);
+  });
+}
+document.getElementById("btnReglages").addEventListener("click", ouvrirReglages);
+
+/* =====================================================================
+   DÉMARRAGE
+   ===================================================================== */
+const CATALOGUE_GEBEN = [
+"FLAG GM","LB GM","LB PM","BEAUFORT GM","BEAUFORT PM","CASTEL GM","CHILL GM","CHILL PM",
+"COCA GM","COCA PM","COCA PET","COCKTAIL GM","COCKTAIL PM","COCKTAIL PET","DOPPEL GM",
+"DOPPEL PM","EKU PM","GUINNESS PM","HAGBE","KANKPE","AWOYO BENIN","AWOYO TOGO","VALMONT",
+"MALTA ENER","MALTA CAFE","MALTA CANET","MOKA GM","MOKA PM","PAMPL GM","PAMPL PM","PAMPL PET",
+"PILS GM","YOUZOU GM","YOUZOU PM","SPRIT PET","TEQUILA BOOSTER","BULDOZER","XXL PM","LEGEND",
+"DESPERADO","ENERGY DRINK","HEINEKEN","JUS IRA","VODY","CONTESSE","AQUA BELLE","FIFA","KWABO",
+"POSSOCITRON","POSSOTOMEY","CASSERA","GEZEFIE"
+];
+
+function normaliser(d){
+  const n = {
+    etablissement: (d.etablissement || "BAR RESTO GEBEN").slice(0,40),
+    theme: {
+      fond: (d.theme && d.theme.fond) || THEME_DEFAUT.fond,
+      accent: (d.theme && d.theme.accent) || THEME_DEFAUT.accent
+    },
+    dateDepart: d.dateDepart || aujourdhui(),
+    boissons: (d.boissons||[]).map(b=>({
+      id: b.id || ("b"+Math.random().toString(36).slice(2,9)),
+      nom: b.nom || "",
+      marque: b.marque || "", format: b.format || "",
+      prixAchat: Math.max(0, Math.round(+b.prixAchat||0)),
+      prixVente: Math.max(0, Math.round(+b.prixVente||0)),
+      stockInitial: Math.max(0, Math.round(+(b.stockInitial!=null?b.stockInitial:b.stock)||0)),
+      seuil: Math.max(0, Math.round(+b.seuil||0))
+    })),
+    receptions: d.receptions || [],
+    journees: d.journees || [],
+    inventaires: d.inventaires || [],
+    comptage: d.comptage || null,
+    compteur: d.compteur || 1
+  };
+  n.journees.sort((a,b)=>a.date.localeCompare(b.date));
+  n.inventaires.sort((a,b)=>a.date.localeCompare(b.date));
+  return n;
+}
+
+/* Reprise des données de la version 1 : les entrées deviennent des
+   réceptions groupées par date et fournisseur, les ventes des journées. */
+function migrerV1(v1){
+  const recs = new Map();
+  (v1.entrees||[]).forEach(e=>{
+    const cle = e.date + "|" + (e.fournisseur||"");
+    if (!recs.has(cle)) recs.set(cle, {id:"r"+recs.size, date:e.date, fournisseur:e.fournisseur||"", lignes:[]});
+    recs.get(cle).lignes.push({boissonId:e.boissonId, nom:e.nomBoisson||"", qte:e.qte, pa:e.prixAchat||0});
+  });
+  const jours = new Map();
+  (v1.ventes||[]).forEach(v=>{
+    if (!jours.has(v.date)) jours.set(v.date, {date:v.date, lignes:[]});
+    const j = jours.get(v.date);
+    const dejà = j.lignes.find(l=>l.boissonId===v.boissonId && l.pu===v.pu);
+    if (dejà) dejà.qte += v.qte;
+    else j.lignes.push({boissonId:v.boissonId, nom:v.nomBoisson||"", qte:v.qte, pu:v.pu, pa:v.prixAchat||0});
+  });
+  return normaliser({
+    dateDepart: v1.dateDepart || null,
+    boissons: v1.boissons,
+    receptions: [...recs.values()],
+    journees: [...jours.values()],
+    inventaires: (v1.inventaires||[]).map(inv=>({
+      id: inv.id, date: inv.date, refLibelle: "origine",
+      lignes: (inv.lignes||[]).map(l=>({
+        boissonId:l.boissonId, nom:l.nom, base:l.theorique, baseDate:inv.date,
+        entrees:0, ventes:0, theorique:l.theorique, reel:l.reel, ecart:l.ecart,
+        pa:l.prixAchat||0, pv:0
+      }))
+    })),
+    compteur: v1.compteur || 1
+  });
+}
+
+async function demarrer(){
+  const sauve = await Depot.lire(CLE);
+  if (sauve && Array.isArray(sauve.boissons) && sauve.boissons.length){
+    D = normaliser(sauve);
+  } else {
+    const v1 = await Depot.lire(CLE_V1);
+    if (v1 && Array.isArray(v1.boissons) && v1.boissons.length
+        && ((v1.ventes||[]).length || (v1.entrees||[]).length)){
+      D = migrerV1(v1);
+      setTimeout(()=>signaler("Données de la version précédente reprises"), 900);
+    } else {
+      D = normaliser({
+        dateDepart: aujourdhui(),
+        boissons: CATALOGUE_GEBEN.map((nom,i)=>({
+          id:"b"+(i+1), nom, prixAchat:0, prixVente:0, stockInitial:0, seuil:0
+        }))
+      });
+      setTimeout(()=>signaler(CATALOGUE_GEBEN.length+" boissons chargées — fixez les prix pour commencer"), 900);
+    }
+    enregistrer();
+  }
+  appliquerTheme();
+  chargerJournee(dateVentes);
+  majEntete();
+  aller("boissons");
+}
+demarrer();
+</script>
+</body>
+</html>
