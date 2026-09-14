@@ -10,7 +10,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icone-apple-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="./icone-192.png">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2316231F'/><text x='16' y='22' font-family='sans-serif' font-size='15' font-weight='700' fill='%23E8A33D' text-anchor='middle'>G</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2316231F'/><path d='M8 7h16l-2 18H10z' fill='%23E8A33D'/><path d='M11 11l7-2 2 6-7 2z' fill='%23BAE2F0'/><path d='M8 7h16l-.5 2.5H8.5z' fill='%23EEF9FC'/>">
 <style>
 :root{
   /* Valeurs de repli : la palette réelle est calculée en JS à partir de
@@ -2430,7 +2430,7 @@ function restaurerSauvegarde(){
         appliquerTheme();
         fermerFeuille();
         enregistrer();
-        if (!D.comptes.length) ecranConfiguration(); else ecranConnexion();
+        if (!D.comptes.length) ecranBienvenue(); else ecranConnexion();
         signaler("Sauvegarde restaurée — reconnectez-vous");
       }catch(e){ signaler("Fichier illisible : choisissez une sauvegarde GEBEN"); }
     };
@@ -2593,6 +2593,10 @@ const Synchro = {
   },
 
   async synchroniser(discret){
+    if (estDetache()){
+      if (!discret) signaler("Téléphone détaché : rattachez-le au bar d'abord");
+      return null;
+    }
     if (!this.active()){ if (!discret) signaler("Synchronisation non configurée"); return null; }
     if (this.enCours) return null;
     if (typeof fetch !== "function"){ if (!discret) signaler("Ce navigateur ne peut pas contacter le serveur"); return null; }
@@ -2630,6 +2634,31 @@ const Synchro = {
     }
   }
 };
+
+/* Dépose une seule entrée de journal sur le serveur, sans rien synchroniser
+   d'autre. Sert à signaler une opération grave faite sur cet appareil. */
+async function tracerAuServeur(entree){
+  if (!entree || !Synchro.active() || typeof fetch !== "function") return false;
+  try{
+    const c = await Synchro.chiffrer(entree);
+    const r = await fetch(Synchro.adresse(), {
+      method: "POST",
+      headers: Synchro.entetes({ Prefer: "resolution=merge-duplicates,return=minimal" }),
+      body: JSON.stringify([{ bar_id:Synchro.cfg.bar, type:"journal",
+        rec_id: entree.id, maj: entree.le, iv:c.iv, charge:c.donnees }])
+    });
+    return r.ok;
+  }catch(e){ return false; }
+}
+
+/* Coupe tout envoi depuis cet appareil. */
+async function detacherDuServeur(){
+  clearTimeout(Synchro.minuteur);
+  Synchro.cfg = { url:"", cle:"", table:"geben_sync", bar:"", phrase:"",
+                  auto:true, filigrane:"", envoyes:{} };
+  Synchro.cle = null;
+  await Synchro.sauver();
+}
 
 /* déclenchement discret : après une salve d'écritures, et au retour à l'écran */
 function planifierSynchro(){
@@ -2810,6 +2839,33 @@ function formulaireCompte(cid){
 
 async function ouvrirSynchro(){
   if (!estAdmin()){ signaler("Réservé à l'administrateur"); return; }
+  if (estDetache()){
+    /* Réinitialisé par le dernier recours : le seul chemin de retour est le
+       rattachement, qui remplace les données locales par celles du bar. Laisser
+       reconfigurer la synchronisation ici permettrait de propager un jeu de
+       données appauvri. */
+    ouvrirFeuille(
+      "<h2>Téléphone détaché</h2>"
+      + '<div class="grave"><b>Ce téléphone a été réinitialisé</b> par la procédure de '
+      + 'dernier recours. Il ne peut plus envoyer de données au serveur.</div>'
+      + '<p class="aide">Pour le remettre en service, rattachez-le au bar : il recevra les '
+      + 'boissons, les prix, les comptes et l\'historique depuis le serveur, et remplacera '
+      + 'ce qu\'il contient aujourd\'hui.</p>'
+      + '<button class="btn" id="dtRejoindre">Rattacher ce téléphone au bar</button>'
+      + '<button class="btn btn-fant" id="dtFin">Fermer</button>',
+    ()=>{
+      document.getElementById("dtFin").addEventListener("click", fermerFeuille);
+      document.getElementById("dtRejoindre").addEventListener("click", ()=>{
+        if (!confirm("Rattacher ce téléphone au bar ?\n\nLes données qu'il contient "
+          + "actuellement seront remplacées par celles du serveur.")) return;
+        session = null; cleCoffre = null; achats = null;
+        document.querySelectorAll(".vue").forEach(v => v.classList.remove("actif"));
+        fermerFeuille();
+        ecranRejoindre();
+      });
+    });
+    return;
+  }
   await Synchro.charger();
   const c = Synchro.cfg;
   const d = Synchro.dernier;
@@ -2860,6 +2916,7 @@ async function ouvrirSynchro(){
       Synchro.cfg.phrase = document.getElementById("syPhrase").value;
       Synchro.cfg.auto = document.getElementById("syAuto").checked;
       await Synchro.sauver();
+      if (Synchro.active()) noterRattachement(Synchro.cfg);
     }
     document.getElementById("sySync").addEventListener("click", async ()=>{
       await relever();
@@ -3028,13 +3085,21 @@ function changerMonMotDePasse(){
    ===================================================================== */
 const ecranAcces = document.getElementById("ecranAcces");
 const accesCorps = document.getElementById("accesCorps");
+/* Reprise exacte de l'icône de l'écran d'accueil : une bouteille et un verre
+   glacé. Les couleurs sont fixes, et non tirées du thème : c'est une marque, et
+   le bleu pâle des glaçons ne serait pas lisible sur un thème clair. */
 const LOGO = '<svg class="logo" viewBox="0 0 512 512" aria-hidden="true">'
-  + '<rect width="512" height="512" rx="112" fill="var(--surface)"/>'
-  + '<path d="M220 56h72v46h-72z" fill="var(--accent)"/>'
-  + '<path d="M232 96h48v106h-48z" fill="var(--accent)"/>'
-  + '<path d="M232 200h48l66 92H166z" fill="var(--accent)"/>'
-  + '<path d="M166 286h180v156a34 34 0 0 1-34 34H200a34 34 0 0 1-34-34z" fill="var(--accent)"/>'
-  + '<path d="M166 336h180v60H166z" fill="var(--surface)"/></svg>';
+  + '<rect width="512" height="512" rx="112" fill="#16231F"/>'
+  + '<g fill="#E8A33D">'
+  +   '<rect x="130" y="93" width="42" height="32" rx="10"/>'
+  +   '<rect x="137.6" y="120" width="26.8" height="72"/>'
+  +   '<path d="M137.6 190.5h26.8L204.1 254.3H98.1z"/>'
+  +   '<path d="M98.1 249.3h106v161.1a22 22 0 0 1-22 22h-62a22 22 0 0 1-22-22z"/>'
+  +   '<path d="M249.3 212.3h159.6l-20.2 220.1H269.4z"/>'
+  + '</g>'
+  + '<path fill="#BAE2F0" d="M267.8 247.6l65.5-18.5 18.5 63.8-65.6 18.5z"/>'
+  + '<path fill="#BAE2F0" d="M329.9 308.1l55.5-15.2-5.1 63.7-55.4 15.9z"/>'
+  + '<path fill="#EEF9FC" d="M249.3 212.3h159.6l-5.1 23.5H254.3z"/></svg>';
 
 function afficherAcces(html, apres){
   accesCorps.innerHTML = html;
@@ -3057,6 +3122,66 @@ function sansChiffrement(){
     + 'ou installez-la sur l\'écran d\'accueil.</div>';
 }
 
+/* ---------- mémoire locale du dernier rattachement ----------
+   Ni l'adresse du serveur, ni la clé, ni l'identifiant du bar ne figurent dans
+   les fichiers publiés : ils ne vivent que dans les téléphones. Ce petit
+   souvenir sert uniquement à pré-remplir l'écran de rattachement. */
+function noterRattachement(c){
+  try{ localStorage.setItem("geben_dernier_bar",
+    JSON.stringify({ url:c.url, cle:c.cle, bar:c.bar })); }catch(e){}
+}
+function dernierRattachement(){
+  try{ return JSON.parse(localStorage.getItem("geben_dernier_bar") || "null"); }
+  catch(e){ return null; }
+}
+/* Un téléphone passé par le dernier recours est « détaché » : il ne peut plus
+   rien envoyer au serveur. Sans cela, un utilisateur pourrait effacer les
+   comptes et les prix de son appareil, puis propager cette destruction à tous
+   les autres téléphones. */
+function estDetache(){
+  try{ return localStorage.getItem("geben_detache") === "1"; }catch(e){ return false; }
+}
+function marquerDetache(oui){
+  try{
+    if (oui) localStorage.setItem("geben_detache", "1");
+    else localStorage.removeItem("geben_detache");
+  }catch(e){}
+}
+
+/* ---------- premier écran : quel est ce téléphone ? ---------- */
+function ecranBienvenue(){
+  const note = dernierRattachement();
+  afficherAcces(
+    LOGO
+    + "<h2>Bienvenue</h2>"
+    + '<p class="sous">Ce téléphone est-il le premier de l\'établissement, ou vient-il '
+    + 's\'ajouter à un bar déjà en service ?</p>'
+    + (estDetache()
+        ? '<div class="grave"><b>Ce téléphone a été réinitialisé.</b><br>Il ne peut plus '
+          + 'envoyer de données au serveur. Rattachez-le au bar pour retrouver l\'ensemble '
+          + 'des informations et la possibilité de synchroniser.</div>'
+        : '')
+    + '<button class="btn" id="acRejoindre">Rejoindre un bar déjà en service</button>'
+    + '<p class="aide" style="margin-top:12px">C\'est le cas de tous les téléphones sauf '
+    + 'le premier. Il vous faudra les quatre informations affichées dans les Réglages du '
+    + 'téléphone principal, rubrique Synchronisation.</p>'
+    + '<hr class="rgl-sep">'
+    + '<button class="btn btn-fant" id="acCreer">Créer un nouveau bar</button>'
+    + '<p class="aide" style="margin-top:12px">À ne faire <b>qu\'une seule fois</b>, sur le '
+    + 'téléphone du responsable. Si le bar existe déjà ailleurs, n\'utilisez pas ce bouton : '
+    + 'vous obtiendriez une application séparée, dont les saisies ne rejoindraient jamais '
+    + 'les autres.</p>',
+  ()=>{
+    document.getElementById("acRejoindre").addEventListener("click", ecranRejoindre);
+    document.getElementById("acCreer").addEventListener("click", ()=>{
+      if (estDetache() && !confirm("Ce téléphone a été réinitialisé et n'est plus rattaché "
+        + "au bar.\n\nCréer un nouveau bar ici fabriquera une application séparée, sans "
+        + "aucun lien avec vos données. Continuer quand même ?")) return;
+      ecranConfiguration();
+    });
+  });
+}
+
 /* ---------- première utilisation : créer l'administrateur ---------- */
 function ecranConfiguration(){
   afficherAcces(
@@ -3075,9 +3200,9 @@ function ecranConfiguration(){
     + 'chiffre les prix d\'achat : il ne peut être retrouvé ni par moi ni par personne. '
     + 'Un code de secours vous sera donné juste après.</p>'
     + '<button class="btn" id="cfgOk" style="margin-top:6px">Créer le compte administrateur</button>'
-    + '<button class="lien" id="cfgRejoindre">Ce bar existe déjà sur un autre téléphone</button>',
+    + '<button class="lien" id="cfgRejoindre">Retour : ce bar existe déjà</button>',
   ()=>{
-    document.getElementById("cfgRejoindre").addEventListener("click", ecranRejoindre);
+    document.getElementById("cfgRejoindre").addEventListener("click", ecranBienvenue);
     document.getElementById("cfgOk").addEventListener("click", async ()=>{
       const nom = document.getElementById("cfgNom").value.trim() || "Administrateur";
       const m1 = document.getElementById("cfgMdp").value;
@@ -3119,17 +3244,19 @@ function ecranConfiguration(){
    Sans ce chemin, un téléphone neuf créerait un second administrateur et un
    second coffre : les deux appareils divergeraient définitivement. */
 function ecranRejoindre(){
+  const note = dernierRattachement();
   afficherAcces(
     LOGO
     + "<h2>Rejoindre un bar existant</h2>"
     + '<p class="sous">Recopiez les quatre informations affichées dans les Réglages du '
     + 'téléphone déjà en service, rubrique Synchronisation.</p>'
     + '<label><span class="lib">Adresse du serveur</span>'
-    + '<input id="rjUrl" autocomplete="off" spellcheck="false" placeholder="https://xxxx.supabase.co"></label>'
+    + '<input id="rjUrl" autocomplete="off" spellcheck="false" value="'+ech(note?note.url:"")+'" '
+    + 'placeholder="https://xxxx.supabase.co"></label>'
     + '<label style="margin-top:11px"><span class="lib">Clé publique du projet</span>'
-    + '<input id="rjCle" autocomplete="off" spellcheck="false"></label>'
+    + '<input id="rjCle" autocomplete="off" spellcheck="false" value="'+ech(note?note.cle:"")+'"></label>'
     + '<label style="margin-top:11px"><span class="lib">Identifiant du bar</span>'
-    + '<input id="rjBar" autocomplete="off" spellcheck="false"></label>'
+    + '<input id="rjBar" autocomplete="off" spellcheck="false" value="'+ech(note?note.bar:"")+'"></label>'
     + '<label style="margin-top:11px"><span class="lib">Phrase de chiffrement</span>'
     + '<input id="rjPhrase" autocomplete="off" spellcheck="false"></label>'
     + '<p class="aide">Ce téléphone recevra les boissons, les prix, les comptes et '
@@ -3137,7 +3264,7 @@ function ecranRejoindre(){
     + '<button class="btn" id="rjOk" style="margin-top:6px">Récupérer les données</button>'
     + '<button class="lien" id="rjRetour">Retour</button>',
   ()=>{
-    document.getElementById("rjRetour").addEventListener("click", ecranConfiguration);
+    document.getElementById("rjRetour").addEventListener("click", ecranBienvenue);
     document.getElementById("rjOk").addEventListener("click", async ()=>{
       const url = document.getElementById("rjUrl").value.trim();
       const cle = document.getElementById("rjCle").value.trim();
@@ -3162,6 +3289,8 @@ function ecranRejoindre(){
         await Depot.ecrire(CLE, D);
         if (!D.comptes.length) throw new Error("aucun compte reçu : vérifiez la phrase");
         journaliser("Appareil rattaché", "données reçues du serveur");
+        noterRattachement(Synchro.cfg);
+        marquerDetache(false);
         appliquerTheme();
         signaler(D.boissons.length + " boissons et " + D.comptes.length + " compte(s) reçus");
         ecranConnexion();
@@ -3374,7 +3503,16 @@ function ecranDernierRecours(){
     + 'sans l\'un des deux secrets.<br><br><b>Ce que vous gardez :</b> les boissons, les prix de '
     + 'vente, les entrées, les ventes, les inventaires et les rapports.</div>'
     + '<p class="aide">Tous les comptes seront supprimés et vous recréerez un administrateur. '
-    + 'L\'opération est inscrite dans le journal de l\'application, de façon visible.</p>'
+    + 'L\'opération est inscrite dans le journal, et signalée au serveur pour que le '
+    + 'responsable la voie depuis les autres téléphones.</p>'
+    + (Synchro.active()
+        ? '<div class="grave" style="border-color:var(--accent)"><b>Cette opération ne touche '
+          + 'que ce téléphone.</b> Les autres appareils et le serveur gardent tout, prix '
+          + 'd\'achat compris. Ce téléphone sera détaché et ne pourra plus rien envoyer '
+          + 'jusqu\'à ce qu\'il soit rattaché au bar.<br><br>Si quelqu\'un connaît '
+          + 'l\'identifiant du bar et la phrase de chiffrement, mieux vaut rattacher ce '
+          + 'téléphone que d\'effacer quoi que ce soit.</div>'
+        : '')
     + '<label><span class="lib">Pour confirmer, tapez : ' + PHRASE + '</span>'
     + '<input id="drPhrase" autocomplete="off" spellcheck="false"></label>'
     + '<button class="btn btn-danger" id="drOk" style="margin-top:12px">'
@@ -3387,12 +3525,24 @@ function ecranDernierRecours(){
         signaler("Phrase de confirmation incorrecte"); return;
       }
       session = { id:null, nom:"Dernier recours", role:"admin" };
-      journaliser("DERNIER RECOURS", "prix d'achat effacés, tous les comptes supprimés");
+      journaliser("DERNIER RECOURS", "sur l'appareil " + APPAREIL
+        + " · prix d'achat effacés localement, comptes supprimés");
+      const trace = D.journal[D.journal.length - 1];
       Depot.ajouterInstantane(D, "avant dernier recours");
       session = null;
+
+      /* La trace part au serveur AVANT le détachement : c'est ce qui permet au
+         responsable de constater l'opération depuis un autre téléphone. */
+      tracerAuServeur(trace).then(()=>{
+        if (Synchro.active()) noterRattachement(Synchro.cfg);
+        detacherDuServeur();
+      });
+
       D.coffre = null; D.comptes = []; cleCoffre = null; achats = null; achatsMigration = null;
+      D.meta = { reglages:ORIGINE_DES_TEMPS, coffre:ORIGINE_DES_TEMPS, verrou:ORIGINE_DES_TEMPS };
+      marquerDetache(true);
       enregistrer();
-      ecranConfiguration();
+      ecranBienvenue();
     });
   });
 }
@@ -3789,7 +3939,7 @@ async function demarrer(){
   await Synchro.charger();
   appliquerTheme();
   demanderDurabilite();
-  if (!D.comptes.length) ecranConfiguration();
+  if (!D.comptes.length) ecranBienvenue();
   else ecranConnexion();
 }
 demarrer();
