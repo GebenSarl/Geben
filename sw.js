@@ -4,7 +4,7 @@
    Les données de gestion ne passent jamais par ici : elles restent dans le
    stockage local du téléphone. */
 
-const CACHE = "geben-v8";
+const CACHE = "geben-v10";
 
 const FICHIERS = [
   "./",

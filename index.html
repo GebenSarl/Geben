@@ -592,6 +592,19 @@ const ACCENTS = [
 ];
 const THEME_DEFAUT = { fond:"#16231F", accent:"#E8A33D" };
 
+/* Créer un bar exige le code détenu par l'administrateur principal. Seule
+   l'empreinte figure ici : lire ce fichier ne révèle pas le code. Elle est
+   calculée avec les mêmes paramètres que les mots de passe, PBKDF2-SHA256 sur
+   120 000 itérations, ce qui rend une recherche exhaustive hors de portée. */
+const CREATION = {
+  sel: "dgKIilmREKbrxj1L7D6lYw==",
+  empreinte: "c3tU+7la2YdkVS2pLxddoJYTb6n5l8qxACOJfQ7CDV4="
+};
+async function codeCreationValide(code){
+  try{ return (await empreinteDe(normaliserCode(code), CREATION.sel)) === CREATION.empreinte; }
+  catch(e){ return false; }
+}
+
 function versRVB(hex){
   const h = (hex||"").replace("#","");
   const n = h.length===3 ? h.split("").map(c=>c+c).join("") : h;
@@ -2494,6 +2507,18 @@ const Synchro = {
                            "Content-Type":"application/json" }, extra || {});
   },
 
+  /* Ce téléphone détient-il des données qui ne viennent pas de ce bar ?
+     On compare les comptes : un appareil légitimement rattaché partage au moins
+     un compte avec le serveur. Un appareil qui a créé son propre bar n'en
+     partage aucun — le fusionner écraserait le coffre et les comptes du bar. */
+  donneesEtrangeres(distant){
+    if (!D.comptes.length) return false;
+    const recus = (distant.comptes || []).map(c => c.id);
+    if (!recus.length) return false;
+    const locaux = new Set(D.comptes.map(c => c.id));
+    return !recus.some(idc => locaux.has(idc));
+  },
+
   async tirer(){
     const distant = { boissons:[], receptions:[], saisies:[], inventaires:[],
                       comptes:[], supprimes:[], journal:[] };
@@ -2606,9 +2631,36 @@ const Synchro = {
     }
     this.enCours = true;
     try{
+      const premierContact = !this.cfg.filigrane;
       const recu = await this.tirer();
+
+      if (premierContact && this.donneesEtrangeres(recu.distant)){
+        /* On s'arrête AVANT la fusion et AVANT tout envoi : rien n'est ni lu
+           ni écrit de travers. Le seul chemin correct est le rattachement,
+           qui remplace le contenu local par celui du bar. */
+        this.cfg.etranger = true;
+        await this.sauver();
+        this.dernier = { le: maintenant(),
+          erreur: "ce téléphone contient un autre bar : il doit être rattaché" };
+        if (!discret) proposerRattachement();
+        return this.dernier;
+      }
+      if (this.cfg.etranger){ this.cfg.etranger = false; }
+
       const bilan = fusionner(recu.distant);
       if (bilan.coffreRemplace) await verifierCoffreApresFusion();
+      /* Supprimer un compte ne sert à rien si l'appareil concerné reste ouvert :
+         on ferme la session dès que le compte a disparu ou été désactivé. */
+      if (!monCompteEstValide()){
+        this.cfg.filigrane = recu.filigrane || this.cfg.filigrane;
+        await this.sauver();
+        await Depot.ecrire(CLE, D);
+        this.dernier = { le: maintenant(), recu: recu.lu, envoye: 0,
+                         ajoutes: bilan.ajoutes, remplaces: bilan.remplaces, erreur: null };
+        signaler("Votre compte n'est plus actif : reconnectez-vous");
+        deconnexion();
+        return this.dernier;
+      }
       /* on oublie le repère d'envoi de ces enregistrements pour les réexpédier */
       bilan.aRenvoyer.forEach(k => { delete this.cfg.envoyes[k]; });
       const envoi = await this.pousser();
@@ -2619,7 +2671,10 @@ const Synchro = {
 
       this.dernier = { le: maintenant(), recu: recu.lu, envoye: envoi.envoyees,
                        ajoutes: bilan.ajoutes, remplaces: bilan.remplaces, erreur: null };
-      if (vueActive) rafraichir();
+      /* Un compte tout juste créé par l'administrateur doit apparaître ici :
+         si l'écran de connexion est affiché, on le redessine. */
+      if (!session && document.getElementById("cxMdp")) ecranConnexion();
+      else if (vueActive && session) rafraichir();
       if (!discret)
         signaler(recu.lu || envoi.envoyees
           ? "Synchronisé · " + recu.lu + " reçus, " + envoi.envoyees + " envoyés"
@@ -2663,6 +2718,7 @@ async function detacherDuServeur(){
 /* déclenchement discret : après une salve d'écritures, et au retour à l'écran */
 function planifierSynchro(){
   if (!Synchro.cfg || !Synchro.cfg.auto || !Synchro.active()) return;
+  if (Synchro.cfg.etranger) return;   /* en attente de rattachement */
   clearTimeout(Synchro.minuteur);
   Synchro.minuteur = setTimeout(()=> Synchro.synchroniser(true), 15000);
 }
@@ -2833,6 +2889,34 @@ function formulaireCompte(cid){
       journaliser("Compte supprimé", c.nom);
       enregistrer(); fermerFeuille(); rendreAdmin();
       signaler(c.nom + " supprimé");
+    });
+  });
+}
+
+function proposerRattachement(){
+  ouvrirFeuille(
+    "<h2>Ce téléphone contient un autre bar</h2>"
+    + '<div class="grave"><b>Rien n\'a été envoyé ni modifié.</b><br>Les paramètres saisis '
+    + 'désignent un bar qui contient déjà des boissons, des comptes et des prix. Or ce '
+    + 'téléphone possède ses propres comptes, créés ici. Fusionner les deux écraserait les '
+    + 'données du bar, prix d\'achat compris.</div>'
+    + '<p class="aide">Le bon chemin est le <b>rattachement</b> : ce téléphone reçoit les '
+    + 'boissons, les prix, les comptes et l\'historique du bar, et remplace ce qu\'il '
+    + 'contient aujourd\'hui. Vous vous connecterez ensuite avec votre compte habituel, '
+    + 'celui que l\'administrateur du bar vous a créé.</p>'
+    + '<p class="aide">Si vous vouliez au contraire garder ce téléphone indépendant, '
+    + 'fermez simplement cette fenêtre : la synchronisation restera inactive.</p>'
+    + '<button class="btn" id="raOk">Rattacher ce téléphone au bar</button>'
+    + '<button class="btn btn-fant" id="raNon">Annuler</button>',
+  ()=>{
+    document.getElementById("raNon").addEventListener("click", fermerFeuille);
+    document.getElementById("raOk").addEventListener("click", ()=>{
+      if (!confirm("Rattacher ce téléphone au bar ?\n\nLes boissons, comptes et saisies "
+        + "créés sur ce téléphone seront remplacés par ceux du bar.")) return;
+      session = null; cleCoffre = null; achats = null;
+      document.querySelectorAll(".vue").forEach(v => v.classList.remove("actif"));
+      fermerFeuille();
+      ecranRejoindre();
     });
   });
 }
@@ -3177,8 +3261,61 @@ function ecranBienvenue(){
       if (estDetache() && !confirm("Ce téléphone a été réinitialisé et n'est plus rattaché "
         + "au bar.\n\nCréer un nouveau bar ici fabriquera une application séparée, sans "
         + "aucun lien avec vos données. Continuer quand même ?")) return;
-      ecranConfiguration();
+      ecranCodeCreation();
     });
+  });
+}
+
+/* ---------- autorisation de créer un bar ----------
+   Sans ce verrou, n'importe qui recevant le lien pouvait se fabriquer une
+   application séparée avec son propre administrateur. Le code est détenu par
+   l'administrateur principal, qui le donne à qui installe un nouveau bar. */
+function ecranCodeCreation(){
+  afficherAcces(
+    LOGO
+    + "<h2>Accord de l'administrateur</h2>"
+    + '<p class="sous">Créer un bar demande le code de création, détenu par '
+    + 'l\'administrateur principal de l\'établissement.</p>'
+    + '<label><span class="lib">Code de création</span>'
+    + '<input id="ccCode" autocomplete="off" spellcheck="false" '
+    + 'placeholder="XXXXX-XXXXX-XXXXX"></label>'
+    + '<p class="aide">Si vous venez rejoindre un bar déjà en service, vous n\'avez pas '
+    + 'besoin de ce code : revenez en arrière et choisissez « Rejoindre un bar déjà en '
+    + 'service ».</p>'
+    + '<button class="btn" id="ccOk" style="margin-top:6px">Continuer</button>'
+    + '<button class="lien" id="ccRetour">Retour</button>',
+  ()=>{
+    document.getElementById("ccRetour").addEventListener("click", ecranBienvenue);
+    const champ = document.getElementById("ccCode");
+    const bouton = document.getElementById("ccOk");
+    let essais = 0;
+    async function verifier(){
+      const code = champ.value;
+      if (normaliserCode(code).length < 8){ signaler("Code incomplet"); return; }
+      bouton.setAttribute("disabled",""); bouton.textContent = "Vérification…";
+      const bon = await codeCreationValide(code);
+      bouton.removeAttribute("disabled"); bouton.textContent = "Continuer";
+      if (bon){ ecranConfiguration(); return; }
+      essais++;
+      champ.value = "";
+      signaler("Code de création incorrect");
+      if (essais >= 3){
+        /* attente croissante : décourage les essais en série */
+        const attente = Math.min(30, (essais - 2) * 10);
+        let reste = attente;
+        bouton.setAttribute("disabled","");
+        bouton.textContent = "Patientez " + reste + " s";
+        const t = setInterval(()=>{
+          reste--;
+          if (reste <= 0){ clearInterval(t); bouton.removeAttribute("disabled");
+                           bouton.textContent = "Continuer"; }
+          else bouton.textContent = "Patientez " + reste + " s";
+        }, 1000);
+      }
+    }
+    bouton.addEventListener("click", verifier);
+    champ.addEventListener("keydown", e => { if (e.key === "Enter") verifier(); });
+    setTimeout(()=>champ.focus(), 60);
   });
 }
 
@@ -3285,6 +3422,7 @@ function ecranRejoindre(){
         D = normaliser({ etablissement: D.etablissement, theme: D.theme });
         fusionner(recu.distant);
         Synchro.cfg.filigrane = recu.filigrane;
+        Synchro.cfg.etranger = false;
         await Synchro.sauver();
         await Depot.ecrire(CLE, D);
         if (!D.comptes.length) throw new Error("aucun compte reçu : vérifiez la phrase");
@@ -3356,7 +3494,10 @@ function ecranConnexion(){
     + '<label><span class="lib">Mot de passe</span>'
     + '<input id="cxMdp" type="password" autocomplete="current-password"></label>'
     + '<button class="btn" id="cxOk" style="margin-top:12px">Se connecter</button>'
-    + '<button class="lien" id="cxOubli">Mot de passe oublié ?</button>',
+    + '<button class="lien" id="cxOubli">Mot de passe oublié ?</button>'
+    + (Synchro.active() && !estDetache()
+        ? '<button class="lien" id="cxMaj">Mon compte vient d\'être créé : actualiser la liste</button>'
+        : ''),
   ()=>{
     accesCorps.querySelectorAll("[data-cid]").forEach(b =>
       b.addEventListener("click", ()=>{ compteChoisi = b.dataset.cid; ecranConnexion(); }));
@@ -3364,6 +3505,16 @@ function ecranConnexion(){
     champ.addEventListener("keydown", e => { if (e.key === "Enter") tenterConnexion(); });
     document.getElementById("cxOk").addEventListener("click", tenterConnexion);
     document.getElementById("cxOubli").addEventListener("click", ecranOubli);
+    const maj = document.getElementById("cxMaj");
+    if (maj) maj.addEventListener("click", async ()=>{
+      maj.textContent = "Mise à jour…";
+      const avant = D.comptes.length;
+      const r = await Synchro.synchroniser(true);
+      if (r && r.erreur) signaler("Serveur injoignable : " + r.erreur);
+      else if (D.comptes.length > avant) signaler("Liste des comptes mise à jour");
+      else signaler("Aucun nouveau compte");
+      if (document.getElementById("cxMaj")) ecranConnexion();
+    });
     if (compteChoisi) setTimeout(()=>champ.focus(), 60);
   });
 }
@@ -3420,6 +3571,13 @@ async function tenterConnexion(){
   journaliser("Connexion", compte.role === "admin" ? "administrateur" : "utilisateur");
   lancerApplication();
   if (Synchro.cfg && Synchro.cfg.auto && Synchro.active()) Synchro.synchroniser(true);
+}
+
+/* Le compte de la session en cours existe-t-il encore, et est-il actif ? */
+function monCompteEstValide(){
+  if (!session) return true;
+  const c = compteDe(session.id);
+  return !!c && c.actif !== false;
 }
 
 function deconnexion(){
@@ -3924,7 +4082,11 @@ async function demarrer(){
       D = normaliser({
         dateDepart: aujourdhui(),
         boissons: CATALOGUE_GEBEN.map((nom,i)=>({
-          id:"b"+(i+1), nom, prixAchat:0, prixVente:0, stockInitial:0, seuil:0
+          /* identifiant unique à cette installation : deux bars créés
+             séparément ne doivent pas partager les mêmes identifiants, sinon
+             leurs catalogues se mélangeraient silencieusement à la fusion */
+          id:"b"+(i+1)+"-"+Math.random().toString(36).slice(2,9),
+          nom, prixAchat:0, prixVente:0, stockInitial:0, seuil:0
         }))
       });
       /* création locale véritable : elle doit primer sur un jeu distant vide */
@@ -3939,8 +4101,12 @@ async function demarrer(){
   await Synchro.charger();
   appliquerTheme();
   demanderDurabilite();
-  if (!D.comptes.length) ecranBienvenue();
-  else ecranConnexion();
+  if (!D.comptes.length){ ecranBienvenue(); return; }
+  ecranConnexion();
+  /* Un appareil déjà rattaché va chercher les nouveautés avant toute connexion :
+     sans cela, un compte créé entre-temps par l'administrateur n'arriverait
+     jamais, et son titulaire ne pourrait pas se connecter. */
+  if (Synchro.active() && !estDetache() && Synchro.cfg.auto) Synchro.synchroniser(true);
 }
 demarrer();
 </script>
